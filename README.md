@@ -1,2 +1,2 @@
-# ver-go
-ver&amp;go app
+# vet-go
+vet&amp;go app
