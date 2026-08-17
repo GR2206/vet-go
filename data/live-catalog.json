@@ -1,0 +1,97 @@
+{
+  "shops": {
+    "pichichos": {
+      "products": [
+        {
+          "id": "rc-maxi",
+          "shopId": "pichichos",
+          "name": "Royal Canin Maxi Adult 15 kg",
+          "category": "Alimento",
+          "price": 48900,
+          "stock": 12,
+          "unit": "bolsa",
+          "featured": true,
+          "discountPct": 20,
+          "species": "dog",
+          "image": "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=400&q=70",
+          "description": "Alimento completo para perros adultos de raza grande. Croqueta adaptada, 15 kg sellados.",
+          "sold": 214,
+          "freeShipping": true
+        },
+        {
+          "id": "arena-premium",
+          "shopId": "pichichos",
+          "name": "Arena aglomerante 10 kg",
+          "category": "Higiene",
+          "price": 9800,
+          "stock": 30,
+          "unit": "bolsa",
+          "featured": true,
+          "species": "cat",
+          "image": "https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=400&q=70",
+          "description": "Arcilla bentonita, control de olor 7 días. Rendimiento alto para bandeja cubierta.",
+          "sold": 640,
+          "freeShipping": true
+        },
+        {
+          "id": "correa-neo",
+          "shopId": "pichichos",
+          "name": "Correa antideslizante 1,20 m",
+          "category": "Paseo",
+          "price": 12400,
+          "stock": 8,
+          "unit": "u",
+          "species": "dog",
+          "image": "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=400&q=70",
+          "description": "Cinta de 25 mm con mosquetón de seguridad. Costura reforzada, apta hasta 35 kg.",
+          "sold": 89
+        },
+        {
+          "id": "antipulgas",
+          "shopId": "pichichos",
+          "name": "Pipeta antipulgas M 10-20 kg",
+          "category": "Salud",
+          "price": 8900,
+          "stock": 20,
+          "unit": "u",
+          "featured": true,
+          "discountPct": 15,
+          "species": "dog",
+          "image": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=400&q=70",
+          "description": "Uso tópico mensual. Protección pulgas y garrapatas. Consultá con tu vet si hay piel sensible.",
+          "sold": 331,
+          "freeShipping": true
+        },
+        {
+          "id": "juguete-cuerda",
+          "shopId": "pichichos",
+          "name": "Cuerda de algodón trenzada",
+          "category": "Juguetes",
+          "price": 4200,
+          "stock": 16,
+          "unit": "u",
+          "species": "all",
+          "image": "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?auto=format&fit=crop&w=400&q=70",
+          "description": "Algodón natural, limpia piezas al morder. Ideal para tironeo controlado.",
+          "sold": 178
+        },
+        {
+          "id": "collar-id",
+          "shopId": "pichichos",
+          "name": "Collar identificador con chapita",
+          "category": "Paseo",
+          "price": 7800,
+          "stock": 14,
+          "unit": "u",
+          "species": "all",
+          "image": "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=400&q=70",
+          "description": "Nylon ajustable + chapita grabada. Hebilla de liberación rápida.",
+          "sold": 203
+        }
+      ],
+      "paused": {},
+      "asks": [],
+      "updatedAt": 1786976513532
+    }
+  }
+}

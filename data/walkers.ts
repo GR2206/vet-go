@@ -1,0 +1,178 @@
+import type { DogWalker } from './types';
+
+export const walkers: DogWalker[] = [
+  {
+    id: 'nico',
+    name: 'Nicolás Herrera',
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=70',
+    cover: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=1400&q=80',
+    neighborhood: 'Pichincha',
+    rating: 4.9,
+    reviews: 128,
+    years: 6,
+    joinedAt: '2023-03',
+    ownerPin: '3301',
+    priceWalk: 6500,
+    bio: 'Paseos en grupos reducidos por el Parque de España. Protocolo con arnés y reporte al tutor.',
+    description:
+      'Paseaperro inscripto en PETS&GO. Trabajo con grupos de hasta cuatro perros, arnés obligatorio y un informe breve al finalizar. Si el animal es reactivo, coordinamos un turno individual. El cobro del servicio es directo; la plataforma percibe un canon por la ficha verificada.',
+    specialties: ['Grupos reducidos', 'Arnés', 'Informe al tutor'],
+    rank: 1,
+    featured: true,
+    hours: { start: '08:00', end: '18:00', step: 60 },
+    coordinate: { latitude: -32.9442, longitude: -60.6451 },
+    distanceKm: 0.5,
+    reviewList: [
+      {
+        id: 'r1',
+        author: 'Carla M.',
+        rating: 5,
+        date: '2 ago 2026',
+        text: 'Puntual y ordenado. Envió el reporte del Parque a horario.',
+      },
+      {
+        id: 'r2',
+        author: 'Julián R.',
+        rating: 5,
+        date: '18 jul 2026',
+        text: 'Horarios claros y trato profesional. Lo vamos a volver a contratar.',
+      },
+    ],
+  },
+  {
+    id: 'sol',
+    name: 'Sol Benedetti',
+    photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=500&q=70',
+    cover: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?auto=format&fit=crop&w=1400&q=80',
+    neighborhood: 'Centro',
+    rating: 4.8,
+    reviews: 96,
+    years: 4,
+    joinedAt: '2024-01',
+    ownerPin: '4488',
+    priceWalk: 7200,
+    bio: 'Paseos individuales para perros con ansiedad. Ritmo calmo, sin correa retráctil.',
+    description:
+      'Formación en adiestramiento en positivo. Los turnos son individuales, con paradas cortas y manejo de estrés. No trabajo en manada. La ficha, la portada y la grilla horaria las cargo yo; las calificaciones las dejan únicamente los tutores.',
+    specialties: ['Individual', 'Ansiedad', 'Refuerzo positivo'],
+    rank: 2,
+    featured: true,
+    hours: { start: '09:00', end: '17:00', step: 30 },
+    coordinate: { latitude: -32.9468, longitude: -60.6394 },
+    distanceKm: 0.6,
+    reviewList: [
+      {
+        id: 'r3',
+        author: 'Ana P.',
+        rating: 5,
+        date: '28 jul 2026',
+        text: 'Al tercer paseo el cruce con otros perros ya era más estable.',
+      },
+      {
+        id: 'r4',
+        author: 'Diego L.',
+        rating: 4,
+        date: '9 jul 2026',
+        text: 'Tarifa más alta, justificada por el trato individual y la constancia.',
+      },
+    ],
+  },
+  {
+    id: 'mati',
+    name: 'Matías López',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=70',
+    cover: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=1400&q=80',
+    neighborhood: 'Fisherton',
+    rating: 4.7,
+    reviews: 74,
+    years: 5,
+    joinedAt: '2023-08',
+    ownerPin: '5510',
+    priceWalk: 6000,
+    bio: 'Recorridos extensos en Fisherton. Indicado para perros de alta energía.',
+    description:
+      'Salidas de una hora, con agua y botiquín básico. La grilla es cada 60 minutos, de 8 a 19 hs. No tomo turnos fuera de esa franja: mantiene el servicio previsible para el tutor y para mí.',
+    specialties: ['Alta energía', 'Recorridos largos', 'Fisherton'],
+    rank: 3,
+    hours: { start: '08:00', end: '19:00', step: 60 },
+    coordinate: { latitude: -32.9346, longitude: -60.6978 },
+    distanceKm: 3.1,
+    reviewList: [
+      {
+        id: 'r5',
+        author: 'Flor S.',
+        rating: 5,
+        date: '12 ago 2026',
+        text: 'Cumplió el horario y el perro volvió cansado, en el buen sentido.',
+      },
+    ],
+  },
+  {
+    id: 'vale',
+    name: 'Valentina Ruiz',
+    photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=500&q=70',
+    cover: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=1400&q=80',
+    neighborhood: 'Echesortu',
+    rating: 4.9,
+    reviews: 61,
+    years: 3,
+    joinedAt: '2025-02',
+    ownerPin: '6622',
+    priceWalk: 5800,
+    bio: 'Socialización de cachorros. Grupos de tres, con agua y sombra.',
+    description:
+      'Turnos cada 30 minutos, de 8 a 16 hs. Trabajo socialización sin forzar el juego. Cada salida incluye un informe breve. Las reseñas las publican los tutores; yo no las edito.',
+    specialties: ['Cachorros', 'Socialización', 'Grupos de 3'],
+    rank: 4,
+    hours: { start: '08:00', end: '16:00', step: 30 },
+    coordinate: { latitude: -32.9488, longitude: -60.6532 },
+    distanceKm: 1.2,
+    reviewList: [
+      {
+        id: 'r6',
+        author: 'Gino',
+        rating: 5,
+        date: '5 ago 2026',
+        text: 'Informe claro y el cachorro volvió tranquilo.',
+      },
+    ],
+  },
+  {
+    id: 'fer',
+    name: 'Fernando Castro',
+    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=500&q=70',
+    cover: 'https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=1400&q=80',
+    neighborhood: 'Alberdi',
+    rating: 4.6,
+    reviews: 43,
+    years: 8,
+    joinedAt: '2022-11',
+    ownerPin: '7703',
+    priceWalk: 5500,
+    bio: 'Perros de talla grande. Franja de 10 a 20 hs, turnos de una hora.',
+    description:
+      'Antecedentes en adiestramiento. Atiendo Alberdi y La Florida. La jornada cierra a las 20 hs: no hay turnos nocturnos ni horarios abiertos. El tutor reserva dentro de esa grilla; yo cobro el paseo y abono el canon de la app.',
+    specialties: ['Talla grande', 'Tarde', 'Alberdi'],
+    rank: 5,
+    hours: { start: '10:00', end: '20:00', step: 60 },
+    coordinate: { latitude: -32.9284, longitude: -60.6498 },
+    distanceKm: 2.4,
+    reviewList: [
+      {
+        id: 'r7',
+        author: 'Maru T.',
+        rating: 4,
+        date: '30 jul 2026',
+        text: 'Cumplió con lluvia. Trato formal y responsable.',
+      },
+    ],
+  },
+];
+
+export function rankWalkers(list: DogWalker[]) {
+  return [...list].sort((a, b) => {
+    if (Boolean(a.featured) !== Boolean(b.featured)) return a.featured ? -1 : 1;
+    if (a.rank !== b.rank) return a.rank - b.rank;
+    return b.rating * b.reviews - a.rating * a.reviews;
+  });
+}
