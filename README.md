@@ -1,2 +1,2 @@
-# vet-go
-vet&amp;go app
+# pets-go
+pets&amp;go app
