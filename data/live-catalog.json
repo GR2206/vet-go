@@ -68,7 +68,7 @@
           "name": "Cuerda de algodón trenzada",
           "category": "Juguetes",
           "price": 4200,
-          "stock": 16,
+          "stock": 3,
           "unit": "u",
           "species": "all",
           "image": "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?auto=format&fit=crop&w=400&q=70",
@@ -91,7 +91,59 @@
       ],
       "paused": {},
       "asks": [],
-      "updatedAt": 1786976513532
+      "updatedAt": 1787020378609,
+      "orders": [],
+      "threads": [
+        {
+          "id": "th-pichichos-gino220687gmailcom",
+          "shopId": "pichichos",
+          "userName": "Petshop Pichichos",
+          "messages": [
+            {
+              "id": "ow-1787015398108",
+              "shopId": "pichichos",
+              "from": "shop",
+              "author": "Petshop Pichichos",
+              "text": "si tenemos, compra tranquilo",
+              "at": 1787015398108
+            },
+            {
+              "id": "ow-1787015730936",
+              "shopId": "pichichos",
+              "from": "shop",
+              "author": "Petshop Pichichos",
+              "text": "bárbaro muchas gracias.",
+              "at": 1787015730936
+            },
+            {
+              "id": "ow-1787016325072",
+              "shopId": "pichichos",
+              "from": "shop",
+              "author": "Petshop Pichichos",
+              "text": "genial",
+              "at": 1787016325072
+            },
+            {
+              "id": "ow-1787017018558",
+              "shopId": "pichichos",
+              "from": "shop",
+              "author": "Petshop Pichichos",
+              "text": "si a la brevedad enviaremos su paquete.",
+              "at": 1787017018558
+            }
+          ],
+          "updatedAt": 1787017018558,
+          "archived": false
+        }
+      ]
+    },
+    "san-martin": {
+      "products": [],
+      "paused": {},
+      "asks": [],
+      "orders": [],
+      "threads": [],
+      "updatedAt": 1787012720174
     }
   }
 }

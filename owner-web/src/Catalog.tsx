@@ -1,19 +1,108 @@
 import { useState } from 'react';
 
 import { formatARS } from '@petsgo/lib/format';
+import type { Product } from '@petsgo/data/types';
 
 import { moneyDigits, pickImage, PRODUCT_PLACEHOLDER } from './files';
 import { readCatalogFile, readCatalogUrl } from './read-sheet';
+import { CrispImg } from './ui/CrispImg';
 import { useOwner } from './store';
 
+function ProductFields({
+  product,
+  onUpdate,
+}: {
+  product: Product;
+  onUpdate: (patch: Partial<Product>) => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        className="thumb-btn"
+        onClick={() => pickImage((uri) => onUpdate({ image: uri }))}
+      >
+        <CrispImg src={product.image || PRODUCT_PLACEHOLDER} alt="" photo />
+        <span>{product.image && product.image !== PRODUCT_PLACEHOLDER ? 'Cambiar foto' : 'Cargar foto'}</span>
+      </button>
+      <div className="fields">
+        <label>
+          Nombre
+          <input value={product.name} onChange={(e) => onUpdate({ name: e.target.value })} />
+        </label>
+        <label>
+          Rubro
+          <input value={product.category} onChange={(e) => onUpdate({ category: e.target.value })} />
+        </label>
+        <label>
+          Precio del día
+          <input
+            inputMode="numeric"
+            value={product.price ? String(product.price) : ''}
+            onChange={(e) => onUpdate({ price: moneyDigits(e.target.value) })}
+          />
+        </label>
+        <label>
+          Stock
+          <input
+            inputMode="numeric"
+            value={String(product.stock)}
+            onChange={(e) => onUpdate({ stock: moneyDigits(e.target.value) })}
+          />
+        </label>
+        <label>
+          Unidad
+          <input value={product.unit} onChange={(e) => onUpdate({ unit: e.target.value })} />
+        </label>
+        <label>
+          Especie
+          <select
+            value={product.species ?? 'all'}
+            onChange={(e) => onUpdate({ species: e.target.value as 'dog' | 'cat' | 'all' })}
+          >
+            <option value="all">Todos</option>
+            <option value="dog">Perro</option>
+            <option value="cat">Gato</option>
+          </select>
+        </label>
+        <label className="span-2">
+          Descripción
+          <textarea
+            rows={2}
+            value={product.description}
+            onChange={(e) => onUpdate({ description: e.target.value })}
+          />
+        </label>
+        <p className="muted span-2">
+          {product.price ? formatARS(product.price) : 'Sin precio'}
+          {product.discountPct ? ` · oferta ${product.discountPct}% OFF` : ''}
+        </p>
+      </div>
+    </>
+  );
+}
+
 export function Catalog() {
-  const { catalog, paused, togglePaused, updateProduct, addProduct, importSheet } = useOwner();
+  const {
+    catalog,
+    drafts,
+    paused,
+    togglePaused,
+    updateProduct,
+    addProduct,
+    updateDraft,
+    publishDraft,
+    discardDraft,
+    importSheet,
+  } = useOwner();
   const [q, setQ] = useState('');
   const [sheetUrl, setSheetUrl] = useState('');
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
   const [err, setErr] = useState('');
+  const [draftErr, setDraftErr] = useState<Record<string, string>>({});
+  const [publishedNote, setPublishedNote] = useState('');
 
   const query = q.trim().toLowerCase();
   const list = catalog.filter(
@@ -32,7 +121,7 @@ export function Catalog() {
     const stats = importSheet(rows);
     setErr('');
     setNote(
-      `Listo: ${stats.updated} actualizados, ${stats.added} nuevos. ${stats.withPhoto} con foto, ${stats.withoutPhoto} sin foto (cargala acá abajo).`,
+      `Listo: ${stats.updated} actualizados, ${stats.added} nuevos publicados. ${stats.withPhoto} con foto, ${stats.withoutPhoto} sin foto (cargala acá abajo).`,
     );
   };
 
@@ -63,9 +152,27 @@ export function Catalog() {
     }
   };
 
+  const onPublish = (id: string) => {
+    const result = publishDraft(id);
+    if (!result.ok) {
+      setDraftErr((prev) => ({ ...prev, [id]: result.error }));
+      return;
+    }
+    setDraftErr((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setPublishedNote('Producto publicado. Ya lo ven los tutores en la app.');
+    window.setTimeout(() => setPublishedNote(''), 4000);
+  };
+
   return (
     <section>
       <h1>Catálogo</h1>
+      <p className="muted">
+        Cargá foto y datos del producto. Recién al tocar <b>Publicar</b> aparece en la tienda de la app.
+      </p>
 
       <label className="sr">Buscar producto</label>
       <input
@@ -94,8 +201,8 @@ export function Catalog() {
           <b>descripcion</b>. Opcional: categoria, unidad, foto (URL), especie, descuento, sku.
         </p>
         <p className="muted">
-          Si el producto ya existe (mismo nombre o código) se actualiza el precio y el stock. Si
-          trae foto, se usa; si no, queda para cargar a mano.
+          Si el producto ya existe (mismo nombre o código) se actualiza el precio y el stock. La planilla
+          publica directo en Market; para uno a mano usá <b>Nuevo producto</b> abajo.
         </p>
         <div className="drop-actions">
           <label className="primary file-btn">
@@ -134,91 +241,55 @@ export function Catalog() {
           Nuevo producto
         </button>
         <p className="muted">
-          {list.length} de {catalog.length}
+          {list.length} publicados
+          {drafts.length ? ` · ${drafts.length} sin publicar` : ''}
         </p>
       </div>
 
-      {catalog.length === 0 ? (
+      {publishedNote ? <p className="ok">{publishedNote}</p> : null}
+
+      {drafts.length ? (
+        <>
+          <h2 className="section-h2">Sin publicar</h2>
+          <p className="muted">Estos productos no los ve el tutor hasta que confirmes con Publicar.</p>
+          <ul className="list">
+            {drafts.map((p) => (
+              <li key={p.id} className="card editor draft">
+                <ProductFields product={p} onUpdate={(patch) => updateDraft(p.id, patch)} />
+                <div className="draft-actions">
+                  <button type="button" className="primary" onClick={() => onPublish(p.id)}>
+                    Publicar
+                  </button>
+                  <button type="button" className="ghost" onClick={() => discardDraft(p.id)}>
+                    Descartar
+                  </button>
+                  {draftErr[p.id] ? <p className="err draft-err">{draftErr[p.id]}</p> : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      {catalog.length === 0 && drafts.length === 0 ? (
         <p className="muted">Este local todavía no tiene productos. Cargá la planilla o creá uno.</p>
-      ) : list.length === 0 ? (
-        <p className="muted">Ningún producto coincide con “{q}”.</p>
-      ) : (
-        <ul className="list">
-          {list.map((p) => (
-            <li key={p.id} className={paused[p.id] ? 'card editor dim' : 'card editor'}>
-              <button
-                type="button"
-                className="thumb-btn"
-                onClick={() => pickImage((uri) => updateProduct(p.id, { image: uri }))}
-              >
-                <img src={p.image || PRODUCT_PLACEHOLDER} alt="" />
-                <span>{p.image && p.image !== PRODUCT_PLACEHOLDER ? 'Cambiar foto' : 'Cargar foto'}</span>
-              </button>
-              <div className="fields">
-                <label>
-                  Nombre
-                  <input value={p.name} onChange={(e) => updateProduct(p.id, { name: e.target.value })} />
-                </label>
-                <label>
-                  Rubro
-                  <input
-                    value={p.category}
-                    onChange={(e) => updateProduct(p.id, { category: e.target.value })}
-                  />
-                </label>
-                <label>
-                  Precio del día
-                  <input
-                    inputMode="numeric"
-                    value={p.price ? String(p.price) : ''}
-                    onChange={(e) => updateProduct(p.id, { price: moneyDigits(e.target.value) })}
-                  />
-                </label>
-                <label>
-                  Stock
-                  <input
-                    inputMode="numeric"
-                    value={String(p.stock)}
-                    onChange={(e) => updateProduct(p.id, { stock: moneyDigits(e.target.value) })}
-                  />
-                </label>
-                <label>
-                  Unidad
-                  <input value={p.unit} onChange={(e) => updateProduct(p.id, { unit: e.target.value })} />
-                </label>
-                <label>
-                  Especie
-                  <select
-                    value={p.species ?? 'all'}
-                    onChange={(e) =>
-                      updateProduct(p.id, { species: e.target.value as 'dog' | 'cat' | 'all' })
-                    }
-                  >
-                    <option value="all">Todos</option>
-                    <option value="dog">Perro</option>
-                    <option value="cat">Gato</option>
-                  </select>
-                </label>
-                <label className="span-2">
-                  Descripción
-                  <textarea
-                    rows={2}
-                    value={p.description}
-                    onChange={(e) => updateProduct(p.id, { description: e.target.value })}
-                  />
-                </label>
-                <p className="muted span-2">
-                  {p.price ? formatARS(p.price) : 'Sin precio'}
-                  {p.discountPct ? ` · oferta ${p.discountPct}% OFF` : ''}
-                </p>
-              </div>
-              <button type="button" className="ghost" onClick={() => togglePaused(p.id)}>
-                {paused[p.id] ? 'Reactivar' : 'Pausar'}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      ) : catalog.length > 0 && list.length === 0 ? (
+        <p className="muted">Ningún producto publicado coincide con “{q}”.</p>
+      ) : list.length ? (
+        <>
+          <h2 className="section-h2">En la tienda</h2>
+          <ul className="list">
+            {list.map((p) => (
+              <li key={p.id} className={paused[p.id] ? 'card editor dim' : 'card editor'}>
+                <ProductFields product={p} onUpdate={(patch) => updateProduct(p.id, patch)} />
+                <button type="button" className="ghost" onClick={() => togglePaused(p.id)}>
+                  {paused[p.id] ? 'Reactivar' : 'Pausar'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
     </section>
   );
 }

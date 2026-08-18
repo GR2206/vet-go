@@ -1,3 +1,5 @@
+import { brandLabel, type CardBrand } from './card';
+
 export function formatARS(value: number) {
   return new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -30,6 +32,23 @@ export function kindLabel(kind: string) {
     default:
       return kind;
   }
+}
+
+export function checkoutPayDetail(order: {
+  method: string;
+  payKind?: 'credit' | 'debit';
+  cardBrand?: string;
+  cardLast4?: string;
+}) {
+  const base = paymentLabel(order.method);
+  if (order.method !== 'card' || !order.cardLast4) return base;
+  const kind =
+    order.payKind === 'debit' ? 'Débito' : order.payKind === 'credit' ? 'Crédito' : 'Tarjeta';
+  const brand =
+    order.cardBrand && order.cardBrand !== 'unknown'
+      ? brandLabel(order.cardBrand as CardBrand)
+      : '';
+  return `${base} · ${kind}${brand ? ` ${brand}` : ''} ·••• ${order.cardLast4}`;
 }
 
 export function paymentLabel(method: string) {

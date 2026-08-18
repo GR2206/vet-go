@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { QtyStepper } from '@/components/ui/QtyStepper';
 import { places } from '@/data/mock';
 import { formatARS, wasPrice } from '@/lib/format';
-import { deductShopStock } from '@/lib/live-catalog';
+import { deductShopStock, pushShopOrder } from '@/lib/live-catalog';
 import { resolvePlace } from '@/lib/place';
 import { useLiveProducts } from '@/lib/use-live-products';
 import { useApp } from '@/store/app-store';
@@ -181,9 +181,12 @@ export default function CartScreen() {
                 unitPrice: p?.price ?? 0,
               };
             });
-          addShopOrder({
-            id: `ord-${Date.now()}`,
+          const orderId = `ord-${Date.now()}`;
+          const shopName = checkoutShop?.name;
+          const order = {
+            id: orderId,
             shopId: checkoutId,
+            shopName,
             items,
             gross: split.gross,
             fee: split.fee,
@@ -192,11 +195,14 @@ export default function CartScreen() {
             payKind: pay.payKind,
             cardBrand: pay.cardBrand,
             cardLast4: pay.cardLast4,
-            status: 'payout_pending',
+            status: 'payout_pending' as const,
+            deliveryStatus: 'awaiting_shop' as const,
             shipping,
             createdAt: Date.now(),
             paidAt: Date.now(),
-          });
+          };
+          addShopOrder(order);
+          void pushShopOrder(order);
           deductShopStock(
             checkoutId,
             items.map((i) => ({ productId: i.productId, qty: i.qty })),
@@ -204,7 +210,11 @@ export default function CartScreen() {
           saveShipping(shipping);
           clearShopCart(checkoutId);
           setCheckoutId(null);
-          Alert.alert('Pago confirmado');
+          Alert.alert(
+            'Pedido enviado',
+            'El local revisará tu compra. Te avisamos cuando lo confirmen y lo verás en Pendientes.',
+            [{ text: 'Ver pendientes', onPress: () => router.push('/pending' as never) }],
+          );
         }}
       />
     </View>

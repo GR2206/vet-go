@@ -100,7 +100,7 @@ export function todayInsights(
   const weekday = new Date(now).getDay();
   const weekend = weekday === 0 || weekday === 6;
   const wellbeing = petWellbeing(pet, bookings, now);
-  const pendings = upcomingPendings(bookings, walks, now);
+  const pendings = upcomingPendings(bookings, walks, [], now);
   const today0 = startOfDay(now);
   const out: Insight[] = [];
   const used = new Set<string>();

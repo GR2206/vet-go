@@ -4,6 +4,7 @@ import { formatARS } from '@petsgo/lib/format';
 import { applyOffersToProducts } from '@petsgo/lib/offers';
 
 import { moneyDigits, PRODUCT_PLACEHOLDER } from './files';
+import { CrispImg } from './ui/CrispImg';
 import { useOwner } from './store';
 
 export function Offers() {
@@ -27,7 +28,7 @@ export function Offers() {
           <p className="kicker">Así lo ve el tutor hoy</p>
           {preview.slice(0, 4).map((p) => (
             <article key={p.id} className="tutor-card">
-              <img src={p.image || PRODUCT_PLACEHOLDER} alt="" />
+              <CrispImg src={p.image || PRODUCT_PLACEHOLDER} alt="" photo />
               <div>
                 <p className="off-kicker">{p.discountPct}% OFF</p>
                 <p className="card-title">{p.name}</p>
@@ -73,7 +74,7 @@ export function Offers() {
       <ul className="list">
         {list.map((p) => (
           <li key={p.id} className="card offer-row">
-            <img src={p.image || PRODUCT_PLACEHOLDER} alt="" />
+            <CrispImg src={p.image || PRODUCT_PLACEHOLDER} alt="" photo />
             <div>
               <p className="card-title">{p.name}</p>
               <p className="muted">{formatARS(p.price)}</p>

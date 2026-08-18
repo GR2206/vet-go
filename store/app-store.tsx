@@ -1,12 +1,34 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Alert } from 'react-native';
 
 import { defaultShopChats, plans, products } from '@/data/mock';
 import { companionPet, createPet } from '@/data/pets';
 import { DAY_MS, esDateLabel } from '@/lib/dates';
-import { hashPassword, normalizeEmail } from '@/lib/auth';
+import {
+  createResetRequest,
+  hashPassword,
+  isResetExpired,
+  isValidEmail,
+  normalizeEmail,
+  resetStorageKey,
+  validatePassword,
+  validatePasswordMatch,
+  type ResetRequest,
+} from '@/lib/auth';
 import { deviceOrigin, type Origin } from '@/lib/here';
-import type { Booking, CartItem, CollarTracker, Pet, PlaceReview, ShippingAddress, ShopMessage, ShopOrder, UserProfile, Voucher, WalkBooking, WalkerJoin, WalkerProfilePatch, WalkerReview } from '@/data/types';
+import { chatTutorKey } from '@/lib/chat-tutor-key';
+import { cartillaPet, threadPetFromCartilla } from '@/lib/active-pet';
+import type { Booking, CartItem, CollarTracker, OrderDeliveryStatus, Pet, PlaceReview, ShippingAddress, ShopMessage, ShopOrder, UserProfile, Voucher, WalkBooking, WalkerJoin, WalkerProfilePatch, WalkerReview } from '@/data/types';
+import {
+  cancelLiveOrder,
+  chatThreadId,
+  pushChatMessage,
+  rateLiveOrder,
+  receiveLiveOrder,
+  type LiveShopOrder,
+} from '@/lib/live-catalog';
+import { isFirebaseConfigured } from '@/lib/cloud-catalog';
 
 const STORAGE_KEY = 'vetgo.session.v2';
 const LEGACY_KEY = 'vetgo.session.v1';
@@ -80,7 +102,20 @@ type Store = Session & {
     name: string,
     email: string,
     password: string,
+    confirmPassword: string,
   ) => Promise<{ ok: true; onboarded: boolean } | { ok: false; error: string }>;
+  requestPasswordReset: (
+    email: string,
+  ) => Promise<
+    | { ok: true; email: string; demoCode: string }
+    | { ok: false; error: string }
+  >;
+  resetPassword: (
+    email: string,
+    code: string,
+    password: string,
+    confirmPassword: string,
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
   logout: () => Promise<void>;
   toggleFavoritePlace: (placeId: string) => void;
   toggleFavoriteProduct: (productId: string) => void;
@@ -108,6 +143,7 @@ type Store = Session & {
   addPlaceReview: (placeId: string, review: Omit<PlaceReview, 'id' | 'date'>) => void;
   updatePlaceReview: (placeId: string, reviewId: string, patch: Pick<PlaceReview, 'rating' | 'text'> & { author?: string }) => void;
   sendShopMessage: (shopId: string, message: Pick<ShopMessage, 'from' | 'author' | 'text'>) => void;
+  mergeShopChatFromLive: (shopId: string, messages: ShopMessage[]) => void;
   updateStaffPhoto: (professionalId: string, uri: string) => void;
   setHeroBackdrop: (kind: 'landscapes' | 'linear') => void;
   saveShipping: (shipping: ShippingAddress) => void;
@@ -121,6 +157,12 @@ type Store = Session & {
   removeShopOrder: (orderId: string) => void;
   clearShopOrders: () => void;
   markShopOrderPaidOut: (orderId: string) => void;
+  syncShopOrderFromLive: (orderId: string, live: LiveShopOrder) => void;
+  markOrderConfirmNotified: (orderId: string) => void;
+  markOrderReceived: (orderId: string) => void;
+  markOrderRated: (orderId: string) => void;
+  dismissPendingOrder: (orderId: string) => void;
+  cancelOrder: (orderId: string) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -147,7 +189,25 @@ function hydrateOrders(orders: ShopOrder[] | undefined): ShopOrder[] {
     payKind: o.payKind,
     cardBrand: o.cardBrand,
     cardLast4: o.cardLast4,
+    deliveryStatus: o.deliveryStatus ?? 'awaiting_shop',
+    confirmNotified: o.confirmNotified ?? false,
+    pendingOpen: o.pendingOpen ?? false,
+    pendingDismissed: o.pendingDismissed ?? false,
+    ratedAt: o.ratedAt,
   }));
+}
+
+function orderStatusRank(status?: string) {
+  if (status === 'cancelled') return 4;
+  if (status === 'rated') return 3;
+  if (status === 'received') return 2;
+  if (status === 'confirmed') return 1;
+  return 0;
+}
+
+function liveDeliveryStatus(raw?: string): OrderDeliveryStatus {
+  if (raw === 'confirmed' || raw === 'received' || raw === 'rated' || raw === 'cancelled') return raw;
+  return 'awaiting_shop';
 }
 
 function migrateUnsafe(raw: string): Session {
@@ -278,7 +338,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [ready, session]);
 
-  const pet = session.pets.find((p) => p.id === session.activePetId) ?? session.pets[0] ?? null;
+  const pet = cartillaPet(session.pets, session.activePetId);
 
   const ensureOrigin = useCallback(async () => {
     const next = await deviceOrigin();
@@ -327,11 +387,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         await AsyncStorage.setItem(ACTIVE_KEY, key);
         return { ok: true, onboarded: next.onboarded };
       },
-      register: async (name, email, password) => {
+      register: async (name, email, password, confirmPassword) => {
         const key = normalizeEmail(email);
         if (!name.trim()) return { ok: false, error: 'Poné tu nombre.' };
-        if (!key.includes('@')) return { ok: false, error: 'Email inválido.' };
-        if (password.length < 4) return { ok: false, error: 'La contraseña necesita 4 caracteres o más.' };
+        if (!isValidEmail(key)) return { ok: false, error: 'Email inválido.' };
+        const passCheck = validatePassword(password);
+        if (!passCheck.ok) return passCheck;
+        const matchCheck = validatePasswordMatch(password, confirmPassword);
+        if (!matchCheck.ok) return matchCheck;
         if (accountsRef.current[key]) return { ok: false, error: 'Ese email ya tiene cuenta. Entrá.' };
         const passwordHash = hashPassword(key, password);
         hashRef.current = passwordHash;
@@ -354,6 +417,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
         await AsyncStorage.setItem(ACTIVE_KEY, key);
         return { ok: true, onboarded };
+      },
+      requestPasswordReset: async (email) => {
+        const key = normalizeEmail(email);
+        if (!isValidEmail(key)) return { ok: false, error: 'Ingresá un email válido.' };
+        if (!accountsRef.current[key]) {
+          return { ok: false, error: 'No hay una cuenta con ese email.' };
+        }
+        const req = createResetRequest(key);
+        await AsyncStorage.setItem(resetStorageKey(), JSON.stringify(req));
+        return { ok: true, email: key, demoCode: req.code };
+      },
+      resetPassword: async (email, code, password, confirmPassword) => {
+        const key = normalizeEmail(email);
+        const cleanCode = code.replace(/\D/g, '');
+        if (!isValidEmail(key)) return { ok: false, error: 'Email inválido.' };
+        if (cleanCode.length !== 6) return { ok: false, error: 'El código tiene 6 dígitos.' };
+        const passCheck = validatePassword(password);
+        if (!passCheck.ok) return passCheck;
+        const matchCheck = validatePasswordMatch(password, confirmPassword);
+        if (!matchCheck.ok) return matchCheck;
+        const rec = accountsRef.current[key];
+        if (!rec) return { ok: false, error: 'No hay una cuenta con ese email.' };
+        let pending: ResetRequest | null = null;
+        try {
+          const raw = await AsyncStorage.getItem(resetStorageKey());
+          if (raw) pending = JSON.parse(raw) as ResetRequest;
+        } catch {
+          pending = null;
+        }
+        if (!pending || normalizeEmail(pending.email) !== key) {
+          return { ok: false, error: 'Pedí un código nuevo desde “Olvidé mi contraseña”.' };
+        }
+        if (isResetExpired(pending)) {
+          await AsyncStorage.removeItem(resetStorageKey());
+          return { ok: false, error: 'El código venció. Pedí uno nuevo.' };
+        }
+        if (pending.code !== cleanCode) {
+          return { ok: false, error: 'Código incorrecto. Revisá el email o reenviá.' };
+        }
+        const passwordHash = hashPassword(key, password);
+        hashRef.current = passwordHash;
+        accountsRef.current[key] = { passwordHash, session: rec.session };
+        await AsyncStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountsRef.current));
+        await AsyncStorage.removeItem(resetStorageKey());
+        return { ok: true };
       },
       logout: async () => {
         hashRef.current = null;
@@ -535,19 +643,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
       },
       sendShopMessage: (shopId, message) => {
-        const next: ShopMessage = {
-          id: `sm-${Date.now()}`,
-          shopId,
-          at: Date.now(),
-          ...message,
-        };
-        setSession((s) => ({
-          ...s,
-          shopChats: {
-            ...s.shopChats,
-            [shopId]: [...(s.shopChats[shopId] ?? []), next],
-          },
-        }));
+        setSession((s) => {
+          const next: ShopMessage = {
+            id: `sm-${Date.now()}`,
+            shopId,
+            at: Date.now(),
+            ...message,
+          };
+          const tutorKey = chatTutorKey(s.user, message.author);
+          const threadId = chatThreadId(shopId, tutorKey);
+          const petMeta = threadPetFromCartilla(cartillaPet(s.pets, s.activePetId));
+          void pushChatMessage({
+            shopId,
+            threadId,
+            userName: s.user?.name ?? message.author,
+            ...(petMeta ?? {}),
+            message: next,
+          }).then((result) => {
+            if (result.ok) return;
+            const hint =
+              result.reason === 'missing_key' || result.reason === 'no_backend'
+                ? 'Completá Firebase en .env (EXPO_PUBLIC_FIREBASE_*) para chatear desde cualquier red.'
+                : `No pudimos enviar el mensaje (${result.reason}).`;
+            Alert.alert('Chat no enviado', hint);
+          });
+          return {
+            ...s,
+            shopChats: {
+              ...s.shopChats,
+              [shopId]: [...(s.shopChats[shopId] ?? []), next],
+            },
+          };
+        });
+      },
+      mergeShopChatFromLive: (shopId, messages) => {
+        setSession((s) => {
+          const existing = s.shopChats[shopId] ?? [];
+          const ids = new Set(existing.map((m) => m.id));
+          const fresh = messages.filter((m) => !ids.has(m.id));
+          if (!fresh.length) return s;
+          const merged = [...existing, ...fresh].sort((a, b) => a.at - b.at);
+          return { ...s, shopChats: { ...s.shopChats, [shopId]: merged } };
+        });
       },
       updateStaffPhoto: (professionalId, uri) => {
         setSession((s) => ({
@@ -643,6 +780,113 @@ export function AppProvider({ children }: { children: ReactNode }) {
             o.id === orderId ? { ...o, status: 'paid_out' as const } : o,
           ),
         }));
+      },
+      syncShopOrderFromLive: (orderId, live) => {
+        setSession((s) => ({
+          ...s,
+          shopOrders: s.shopOrders.map((o) => {
+            if (o.id !== orderId) return o;
+            const liveStatus = liveDeliveryStatus(live.deliveryStatus);
+            const status =
+              orderStatusRank(liveStatus) > orderStatusRank(o.deliveryStatus)
+                ? liveStatus
+                : o.deliveryStatus;
+            return {
+              ...o,
+              shopName: live.shopName ?? o.shopName,
+              deliveryStatus: status,
+              confirmedAt: live.confirmedAt ?? o.confirmedAt,
+              receivedAt: live.receivedAt ?? o.receivedAt,
+              payKind:
+                live.payKind === 'credit' || live.payKind === 'debit'
+                  ? live.payKind
+                  : o.payKind,
+              cardBrand:
+                live.cardBrand === 'visa' ||
+                live.cardBrand === 'mastercard' ||
+                live.cardBrand === 'amex' ||
+                live.cardBrand === 'unknown'
+                  ? live.cardBrand
+                  : o.cardBrand,
+              cardLast4: live.cardLast4 ?? o.cardLast4,
+            };
+          }),
+        }));
+      },
+      markOrderConfirmNotified: (orderId) => {
+        setSession((s) => ({
+          ...s,
+          shopOrders: s.shopOrders.map((o) =>
+            o.id === orderId ? { ...o, confirmNotified: true } : o,
+          ),
+        }));
+      },
+      markOrderReceived: (orderId) => {
+        setSession((s) => {
+          const order = s.shopOrders.find((o) => o.id === orderId);
+          if (!order) return s;
+          if (order.deliveryStatus !== 'rated') void receiveLiveOrder(order.shopId, orderId);
+          return {
+            ...s,
+            shopOrders: s.shopOrders.map((o) =>
+              o.id === orderId
+                ? {
+                    ...o,
+                    deliveryStatus:
+                      orderStatusRank(o.deliveryStatus) >= orderStatusRank('received')
+                        ? o.deliveryStatus
+                        : ('received' as const),
+                    receivedAt: o.receivedAt ?? Date.now(),
+                    pendingOpen: true,
+                    pendingDismissed: false,
+                  }
+                : o,
+            ),
+          };
+        });
+      },
+      markOrderRated: (orderId) => {
+        setSession((s) => {
+          const order = s.shopOrders.find((o) => o.id === orderId);
+          if (!order) return s;
+          void rateLiveOrder(order.shopId, orderId);
+          return {
+            ...s,
+            shopOrders: s.shopOrders.map((o) =>
+              o.id === orderId
+                ? {
+                    ...o,
+                    deliveryStatus: 'rated' as const,
+                    ratedAt: o.ratedAt ?? Date.now(),
+                    pendingOpen: true,
+                    pendingDismissed: false,
+                  }
+                : o,
+            ),
+          };
+        });
+      },
+      dismissPendingOrder: (orderId) => {
+        setSession((s) => ({
+          ...s,
+          shopOrders: s.shopOrders.map((o) =>
+            o.id === orderId ? { ...o, pendingOpen: false, pendingDismissed: true } : o,
+          ),
+        }));
+      },
+      cancelOrder: (orderId) => {
+        setSession((s) => {
+          const order = s.shopOrders.find((o) => o.id === orderId);
+          if (!order || order.deliveryStatus !== 'awaiting_shop') return s;
+          if (Date.now() - order.paidAt > 2 * 60 * 1000) return s;
+          void cancelLiveOrder(order.shopId, orderId);
+          return {
+            ...s,
+            shopOrders: s.shopOrders.map((o) =>
+              o.id === orderId ? { ...o, deliveryStatus: 'cancelled' as const } : o,
+            ),
+          };
+        });
       },
     }),
     [ready, session, pet, origin, ensureOrigin],

@@ -1,4 +1,5 @@
 import { pickImage } from './files';
+import { CrispImg } from './ui/CrispImg';
 import { useOwner } from './store';
 
 export function Team() {
@@ -21,7 +22,7 @@ export function Team() {
                 className="thumb-btn tall"
                 onClick={() => pickImage((uri) => updateProfessional(pro.id, { photo: uri }))}
               >
-                {pro.photo ? <img src={pro.photo} alt={pro.name} /> : <span className="ph">Foto</span>}
+                {pro.photo ? <CrispImg src={pro.photo} alt={pro.name} photo /> : <span className="ph">Foto</span>}
                 <span>Cambiar foto</span>
               </button>
               <div className="fields">

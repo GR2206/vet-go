@@ -1,4 +1,5 @@
 import { SaleCard } from './Sales';
+import { CrispImg } from './ui/CrispImg';
 import { useOwner } from './store';
 
 export function HistorySales() {
@@ -8,7 +9,7 @@ export function HistorySales() {
   return (
     <div className="history-page">
       <header className="history-bar">
-        <img src="/logo.png" alt="PETS&GO" />
+        <CrispImg src="/logo.png" alt="PETS&GO" logo decoding="sync" />
         <div>
           <p className="kicker">Historial de compras</p>
           <h1>{shop.name}</h1>

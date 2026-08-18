@@ -10,20 +10,35 @@ export type FirebaseWebConfig = {
   appId: string;
 };
 
-function read(key: string) {
-  const fromProcess =
-    (typeof process !== 'undefined' && (process.env[`EXPO_PUBLIC_${key}`] || process.env[`VITE_${key}`])) || '';
-  return fromProcess.trim();
+declare const __PETSGO_FIREBASE_CONFIG__: Partial<FirebaseWebConfig> | undefined;
+
+function env(value: string | undefined) {
+  return (value ?? '').trim();
+}
+
+function fromInjected(): FirebaseWebConfig | null {
+  const raw = typeof __PETSGO_FIREBASE_CONFIG__ === 'undefined' ? null : __PETSGO_FIREBASE_CONFIG__;
+  if (!raw?.apiKey || !raw.projectId || !raw.appId) return null;
+  return {
+    apiKey: env(raw.apiKey),
+    authDomain: env(raw.authDomain),
+    projectId: env(raw.projectId),
+    storageBucket: env(raw.storageBucket),
+    messagingSenderId: env(raw.messagingSenderId),
+    appId: env(raw.appId),
+  };
 }
 
 export function firebaseWebConfig(): FirebaseWebConfig {
+  const injected = fromInjected();
+  if (injected) return injected;
   return {
-    apiKey: read('FIREBASE_API_KEY'),
-    authDomain: read('FIREBASE_AUTH_DOMAIN'),
-    projectId: read('FIREBASE_PROJECT_ID'),
-    storageBucket: read('FIREBASE_STORAGE_BUCKET'),
-    messagingSenderId: read('FIREBASE_MESSAGING_SENDER_ID'),
-    appId: read('FIREBASE_APP_ID'),
+    apiKey: env(process.env.EXPO_PUBLIC_FIREBASE_API_KEY),
+    authDomain: env(process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN),
+    projectId: env(process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID),
+    storageBucket: env(process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET),
+    messagingSenderId: env(process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
+    appId: env(process.env.EXPO_PUBLIC_FIREBASE_APP_ID),
   };
 }
 

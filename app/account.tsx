@@ -10,6 +10,13 @@ import { zones } from '@/data/mock';
 import { useApp } from '@/store/app-store';
 import { colors, fonts, radius, surface } from '@/theme/tokens';
 
+function ownerPanelHelp() {
+  Alert.alert(
+    'Panel para comercios',
+    'Los dueños de local no entran por la app del tutor. Abrí el panel web en el navegador:\n\n· Desarrollo: http://localhost:5173\n· PIN demo Pichichos: 4411 · San Martín: 2580 · Luna: 1919',
+  );
+}
+
 export default function AccountScreen() {
   const router = useRouter();
   const { user, updateUser, setVip, logout } = useApp();
@@ -90,9 +97,9 @@ export default function AccountScreen() {
         />
         <Button
           variant="ghost"
-          label="Modo dueño (comercio)"
+          label="¿Tenés un comercio?"
           style={{ marginTop: 10 }}
-          onPress={() => router.push('/owner')}
+          onPress={ownerPanelHelp}
         />
         <Button
           variant="ghost"

@@ -18,6 +18,9 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AppProvider } from '@/store/app-store';
+import { OrderSyncBridge } from '@/components/OrderSyncBridge';
+import { ChatSyncBridge } from '@/components/ChatSyncBridge';
+import { getFirestoreDb, isFirebaseConfigured } from '@/lib/firebase';
 import { BackLink } from '@/components/ui/BackLink';
 import { colors, fonts } from '@/theme/tokens';
 
@@ -60,10 +63,13 @@ export default function RootLayout() {
 
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => undefined);
+    if (isFirebaseConfigured()) getFirestoreDb();
   }, []);
 
   return (
     <AppProvider>
+      <OrderSyncBridge />
+      <ChatSyncBridge />
       <ThemeProvider value={navTheme}>
         <StatusBar style="dark" />
         <Stack
@@ -80,6 +86,8 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="login" />
+          <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="reset-password" />
           <Stack.Screen name="(onboarding)" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="shop" options={{ headerShown: false }} />

@@ -1,0 +1,137 @@
+/* Ultra-crisp rendering — text, lines, photos */
+:root {
+  --stroke: 1px;
+  --line-crisp: rgba(18, 18, 20, 0.24);
+  --glass-solid: rgba(251, 250, 248, 0.97);
+  --glass-dark-solid: rgba(20, 30, 46, 0.96);
+  --text-subtle: -0.012em;
+  --text-display: -0.022em;
+}
+
+@media (min-resolution: 2dppx), (-webkit-min-device-pixel-ratio: 2) {
+  :root {
+    --line-crisp: rgba(18, 18, 20, 0.3);
+  }
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  font-variant-ligatures: common-ligatures;
+  color-scheme: light;
+}
+
+body {
+  font-synthesis: none;
+  font-optical-sizing: auto;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--text-subtle);
+  line-height: 1.47;
+}
+
+h1,
+h2,
+h3,
+.side-shop,
+.stat-value,
+.card-title,
+.price {
+  letter-spacing: var(--text-display);
+  font-optical-sizing: auto;
+  text-wrap: balance;
+}
+
+button,
+input,
+textarea,
+select,
+label,
+.nav,
+.primary,
+.ghost {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+  image-rendering: auto;
+  -ms-interpolation-mode: bicubic;
+}
+
+.media-logo {
+  image-rendering: auto;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.media-photo {
+  image-rendering: auto;
+  object-fit: cover;
+  object-position: center;
+  -webkit-user-drag: none;
+}
+
+.media-sharp {
+  image-rendering: auto;
+}
+
+svg {
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
+.card,
+.stat,
+.login-card,
+.side-logo-wrap,
+.drop,
+.editor,
+.sale-card,
+.cal-board,
+.toast {
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.38),
+    0 1px 2px rgba(11, 21, 34, 0.04);
+}
+
+.side,
+.login-card,
+.card,
+.stat {
+  backdrop-filter: saturate(1.08) blur(5px);
+  -webkit-backdrop-filter: saturate(1.08) blur(5px);
+}
+
+input,
+textarea,
+select {
+  border: var(--stroke) solid var(--line-crisp);
+  box-shadow: inset 0 1px 2px rgba(20, 30, 46, 0.04);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid rgba(90, 115, 136, 0.55);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(90, 115, 136, 0.22);
+  color: var(--navy);
+}

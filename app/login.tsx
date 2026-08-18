@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput,
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
+import { PasswordField } from '@/components/ui/PasswordField';
 import { useApp } from '@/store/app-store';
 import { colors, fonts, radius } from '@/theme/tokens';
 
@@ -14,8 +15,19 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const switchMode = (next: 'login' | 'register') => {
+    setError('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirm(false);
+    setMode(next);
+  };
 
   const submit = async () => {
     if (busy) return;
@@ -25,7 +37,7 @@ export default function LoginScreen() {
     const result =
       mode === 'login'
         ? await login(email, password)
-        : await register(name, email, password);
+        : await register(name, email, password, confirmPassword);
     setBusy(false);
     if (!result.ok) {
       setError(result.error);
@@ -58,28 +70,37 @@ export default function LoginScreen() {
           placeholder="Email"
           autoCapitalize="none"
           keyboardType="email-address"
+          autoComplete="email"
           placeholderTextColor={colors.muted}
           style={styles.input}
         />
-        <TextInput
+        <PasswordField
           value={password}
           onChangeText={setPassword}
           placeholder="Contraseña"
-          secureTextEntry
-          placeholderTextColor={colors.muted}
-          style={styles.input}
+          visible={showPassword}
+          onToggleVisible={() => setShowPassword((v) => !v)}
         />
+        {mode === 'register' ? (
+          <PasswordField
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Repetir contraseña"
+            visible={showConfirm}
+            onToggleVisible={() => setShowConfirm((v) => !v)}
+          />
+        ) : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        {mode === 'login' ? (
+          <Pressable onPress={() => router.push('/forgot-password')} style={styles.forgot}>
+            <Text style={styles.forgotTxt}>Olvidé mi contraseña</Text>
+          </Pressable>
+        ) : null}
 
         <View style={{ flex: 1 }} />
         <Button label={busy ? 'Un segundo…' : mode === 'login' ? 'Entrar' : 'Crear cuenta'} onPress={submit} />
-        <Pressable
-          onPress={() => {
-            setError('');
-            setMode(mode === 'login' ? 'register' : 'login');
-          }}
-          style={styles.switch}
-        >
+        <Pressable onPress={() => switchMode(mode === 'login' ? 'register' : 'login')} style={styles.switch}>
           <Text style={styles.switchTxt}>
             {mode === 'login' ? '¿No tenés cuenta? Creala' : '¿Ya tenés cuenta? Entrá'}
           </Text>
@@ -113,6 +134,8 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   error: { fontFamily: fonts.sansSemi, color: colors.danger, marginBottom: 10 },
+  forgot: { alignSelf: 'flex-start', paddingVertical: 4, marginBottom: 8 },
+  forgotTxt: { fontFamily: fonts.sansSemi, color: colors.navy, fontSize: 14 },
   switch: { alignItems: 'center', paddingVertical: 16 },
   switchTxt: { fontFamily: fonts.sansSemi, color: colors.navy, fontSize: 14 },
 });

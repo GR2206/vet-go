@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 import { kindLabel } from '@petsgo/lib/format';
 
 import { Catalog } from './Catalog';
@@ -5,6 +7,7 @@ import { Chat } from './Chat';
 import { Local } from './Local';
 import { Offers } from './Offers';
 import { Sales } from './Sales';
+import { CrispImg } from './ui/CrispImg';
 import { useOwner, type Tab } from './store';
 import { Support } from './Support';
 import { Team } from './Team';
@@ -23,14 +26,14 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 export function Dashboard() {
-  const { shop, logout, tab, setTab, notices, dismissNotice, unreadChatCount } = useOwner();
+  const { shop, logout, tab, setTab, unreadChatCount, unreadSalesCount } = useOwner();
   if (!shop) return null;
 
   return (
     <div className="shell">
       <aside className="side">
         <div className="side-logo-wrap">
-          <img src="/logo.png" alt="PETS&GO" />
+          <CrispImg src="/logo.png" alt="PETS&GO" logo decoding="sync" fetchPriority="high" />
         </div>
         <p className="side-kicker">Dueños · Rosario</p>
         <h2 className="side-shop">{shop.name}</h2>
@@ -49,6 +52,9 @@ export function Dashboard() {
               {item.id === 'chat' && unreadChatCount > 0 ? (
                 <span className="nav-badge">{unreadChatCount > 9 ? '9+' : unreadChatCount}</span>
               ) : null}
+              {item.id === 'ventas' && unreadSalesCount > 0 ? (
+                <span className="nav-badge">{unreadSalesCount > 9 ? '9+' : unreadSalesCount}</span>
+              ) : null}
             </button>
           ))}
         </nav>
@@ -57,18 +63,7 @@ export function Dashboard() {
         </button>
       </aside>
       <main className="main">
-        {notices.length ? (
-          <div className="toasts">
-            {notices.map((n) => (
-              <aside key={n.id} className="toast">
-                <p>{n.text}</p>
-                <button type="button" className="link" onClick={() => dismissNotice(n.id)}>
-                  Cerrar
-                </button>
-              </aside>
-            ))}
-          </div>
-        ) : null}
+        <ToastStack />
         {tab === 'resumen' ? <Resumen /> : null}
         {tab === 'ventas' ? <Sales /> : null}
         {tab === 'catalogo' ? <Catalog /> : null}
@@ -79,6 +74,64 @@ export function Dashboard() {
         {tab === 'local' ? <Local /> : null}
         {tab === 'soporte' ? <Support /> : null}
       </main>
+    </div>
+  );
+}
+
+function ToastStack() {
+  const { notices, dismissNotice } = useOwner();
+  const [leaving, setLeaving] = useState<Record<string, boolean>>({});
+  const armed = useRef(new Set<string>());
+
+  useEffect(() => {
+    const visible = notices.slice(0, 3);
+    for (const notice of visible) {
+      if (armed.current.has(notice.id)) continue;
+      armed.current.add(notice.id);
+      const hold = 6200 + Math.floor(Math.random() * 1600);
+      window.setTimeout(() => {
+        setLeaving((prev) => ({ ...prev, [notice.id]: true }));
+        window.setTimeout(() => {
+          dismissNotice(notice.id);
+          armed.current.delete(notice.id);
+          setLeaving((prev) => {
+            const next = { ...prev };
+            delete next[notice.id];
+            return next;
+          });
+        }, 1200);
+      }, hold);
+    }
+  }, [notices, dismissNotice]);
+
+  useEffect(
+    () => () => {
+      armed.current.clear();
+    },
+    [],
+  );
+
+  const visible = notices.slice(0, 3);
+  if (!visible.length) return null;
+
+  return (
+    <div className="toasts" aria-live="polite">
+      {visible.map((n) => (
+        <aside key={n.id} className={`toast${leaving[n.id] ? ' toast-out' : ''}`}>
+          <span className="toast-bar" aria-hidden />
+          <p>{n.text}</p>
+          <button
+            type="button"
+            className="link"
+            onClick={() => {
+              setLeaving((prev) => ({ ...prev, [n.id]: true }));
+              window.setTimeout(() => dismissNotice(n.id), 1200);
+            }}
+          >
+            Cerrar
+          </button>
+        </aside>
+      ))}
     </div>
   );
 }

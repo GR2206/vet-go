@@ -81,6 +81,8 @@ export type ShopThread = {
   id: string;
   shopId: string;
   userName: string;
+  petName?: string;
+  petSpecies?: 'dog' | 'cat';
   messages: ShopMessage[];
   updatedAt: number;
   archived: boolean;
@@ -190,9 +192,12 @@ export type ShopOrderItem = {
   unitPrice: number;
 };
 
+export type OrderDeliveryStatus = 'awaiting_shop' | 'confirmed' | 'received' | 'rated' | 'cancelled';
+
 export type ShopOrder = {
   id: string;
   shopId: string;
+  shopName?: string;
   items: ShopOrderItem[];
   gross: number;
   fee: number;
@@ -202,6 +207,13 @@ export type ShopOrder = {
   cardBrand?: 'visa' | 'mastercard' | 'amex' | 'unknown';
   cardLast4?: string;
   status: 'paid' | 'payout_pending' | 'paid_out';
+  deliveryStatus: OrderDeliveryStatus;
+  confirmedAt?: number;
+  receivedAt?: number;
+  ratedAt?: number;
+  confirmNotified?: boolean;
+  pendingOpen?: boolean;
+  pendingDismissed?: boolean;
   shipping: ShippingAddress;
   createdAt: number;
   paidAt: number;

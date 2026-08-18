@@ -1,11 +1,32 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Demo: lectura/escritura abierta para conectar app y panel.
-    // Cuando haya login de dueños, restringir writes al comercio dueño.
-    match /shops/{shopId}/{document=**} {
-      allow read: if true;
-      allow write: if true;
-    }
-  }
-}
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /shops/{shopId} {
+      allow read: if true;
+      allow create, update: if true;
+    }
+    match /shops/{shopId}/products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+    match /shops/{shopId}/orders/{orderId} {
+      allow read: if true;
+      allow create, update: if true;
+    }
+    match /shops/{shopId}/asks/{askId} {
+      allow read: if true;
+      allow create, delete: if true;
+    }
+    match /shops/{shopId}/threads/{threadId} {
+      allow read: if true;
+      allow create, update: if true;
+      match /messages/{msgId} {
+        allow read: if true;
+        allow create: if request.resource.data.from in ['user', 'shop']
+          && request.resource.data.text is string
+          && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 800;
+      }
+    }
+  }
+}

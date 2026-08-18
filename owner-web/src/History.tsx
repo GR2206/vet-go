@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { when } from './files';
+import { CrispImg } from './ui/CrispImg';
 import { useOwner } from './store';
 
 export function History() {
@@ -19,7 +20,7 @@ export function History() {
   return (
     <div className="history-page">
       <header className="history-bar">
-        <img src="/logo.png" alt="PETS&GO" />
+        <CrispImg src="/logo.png" alt="PETS&GO" logo decoding="sync" />
         <div>
           <p className="kicker">Historial 30 días</p>
           <h1>{shop.name}</h1>
@@ -42,6 +43,7 @@ export function History() {
                 onClick={() => setOpenId(t.id)}
               >
                 <p className="card-title">{t.userName}</p>
+                {t.petName ? <p className="inbox-pet">Mascota · {t.petName}</p> : null}
                 <p className="muted">{t.archived ? 'Archivado' : 'Activo'}</p>
                 <time>{when(t.updatedAt)}</time>
               </button>
@@ -55,6 +57,7 @@ export function History() {
             <>
               <div className="chat-box-head">
                 <p className="card-title">{current.userName}</p>
+                {current.petName ? <p className="muted">Mascota · {current.petName}</p> : null}
                 {current.archived ? (
                   <button type="button" className="primary" onClick={() => goPanel(current.id)}>
                     Reabrir en el panel

@@ -1,126 +1,29 @@
-import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+
+import { createLiveCatalogMiddleware } from './server/live-catalog-handler';
 
 const data = fileURLToPath(new URL('../data', import.meta.url));
 const lib = fileURLToPath(new URL('../lib', import.meta.url));
 const liveFile = fileURLToPath(new URL('../data/live-catalog.json', import.meta.url));
 
-type LiveFile = {
-  shops: Record<
-    string,
-    {
-      products: unknown[];
-      paused: Record<string, boolean>;
-      asks: { id: string; shopId: string; productId: string; productName: string; tutorName: string; at: number }[];
-      updatedAt: number;
-    }
-  >;
-};
-
-function readLive(): LiveFile {
-  try {
-    return JSON.parse(fs.readFileSync(liveFile, 'utf8')) as LiveFile;
-  } catch {
-    return { shops: {} };
-  }
-}
-
-function writeLive(db: LiveFile) {
-  fs.writeFileSync(liveFile, JSON.stringify(db, null, 2));
-}
-
-function shopOf(db: LiveFile, shopId: string) {
-  db.shops[shopId] ??= { products: [], paused: {}, asks: [], updatedAt: Date.now() };
-  return db.shops[shopId];
-}
-
-function liveCatalogPlugin(): Plugin {
+function liveCatalogPlugin(env: Record<string, string>, isSecure: boolean): Plugin {
+  const getEnv = (key: string) => env[key] ?? process.env[key];
+  const handler = createLiveCatalogMiddleware({ liveFile, getEnv, isSecure });
   return {
-    name: 'live-catalog',
+    name: 'live-catalog-secure',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const url = req.url?.split('?')[0] ?? '';
-        if (url !== '/api/live-catalog') return next();
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-        if (req.method === 'OPTIONS') {
-          res.statusCode = 204;
-          res.end();
-          return;
-        }
-        const send = (obj: unknown) => {
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify(obj));
-        };
-        if (req.method === 'GET') {
-          send(readLive());
-          return;
-        }
-        if (req.method !== 'POST') {
-          res.statusCode = 405;
-          res.end();
-          return;
-        }
-        const chunks: Buffer[] = [];
-        req.on('data', (c) => chunks.push(c as Buffer));
-        req.on('end', () => {
-          try {
-            const body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}') as Record<string, unknown>;
-            const db = readLive();
-            const shopId = String(body.shopId ?? '');
-            if (body.action === 'publish' && shopId) {
-              const row = shopOf(db, shopId);
-              row.products = Array.isArray(body.products) ? body.products : row.products;
-              row.paused = (body.paused as Record<string, boolean>) ?? row.paused;
-              row.updatedAt = Date.now();
-            } else if (body.action === 'ask' && shopId) {
-              const row = shopOf(db, shopId);
-              const productId = String(body.productId ?? '');
-              const dup = row.asks.some(
-                (a) => a.productId === productId && Date.now() - a.at < 1000 * 60 * 30,
-              );
-              if (!dup) {
-                row.asks.unshift({
-                  id: String(body.id ?? `ask-${Date.now()}`),
-                  shopId,
-                  productId,
-                  productName: String(body.productName ?? 'Producto'),
-                  tutorName: String(body.tutorName ?? 'Un tutor'),
-                  at: Number(body.at ?? Date.now()),
-                });
-              }
-              row.updatedAt = Date.now();
-            } else if (body.action === 'dismiss' && shopId) {
-              const row = shopOf(db, shopId);
-              row.asks = row.asks.filter((a) => a.id !== body.id);
-              row.updatedAt = Date.now();
-            } else if (body.action === 'deduct' && shopId) {
-              const row = shopOf(db, shopId);
-              const items = Array.isArray(body.items) ? (body.items as { productId: string; qty: number }[]) : [];
-              row.products = row.products.map((p) => {
-                const prod = p as { id: string; stock: number };
-                const hit = items.find((i) => i.productId === prod.id);
-                if (!hit) return p;
-                return { ...prod, stock: Math.max(0, (prod.stock ?? 0) - Math.max(0, hit.qty)) };
-              });
-              row.updatedAt = Date.now();
-            }
-            writeLive(db);
-            send(db);
-          } catch {
-            res.statusCode = 400;
-            res.end('{"error":"bad json"}');
-          }
-        });
+        void handler(req, res, next);
       });
     },
   };
 }
 
+const ownerRoot = fileURLToPath(new URL('.', import.meta.url));
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+const firebaseRoot = fileURLToPath(new URL('./node_modules/firebase', import.meta.url));
 const FIREBASE_KEYS = [
   'FIREBASE_API_KEY',
   'FIREBASE_AUTH_DOMAIN',
@@ -131,7 +34,19 @@ const FIREBASE_KEYS = [
 ] as const;
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, repoRoot, ['EXPO_PUBLIC_', 'VITE_']);
+  const env = loadEnv(mode, repoRoot, ['EXPO_PUBLIC_', 'VITE_', 'LIVE_']);
+  for (const [key, value] of Object.entries(env)) {
+    if (value && !process.env[key]) process.env[key] = value;
+  }
+  const firebaseInjected = {
+    apiKey: env.EXPO_PUBLIC_FIREBASE_API_KEY || env.VITE_FIREBASE_API_KEY || '',
+    authDomain: env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || env.VITE_FIREBASE_AUTH_DOMAIN || '',
+    projectId: env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || env.VITE_FIREBASE_PROJECT_ID || '',
+    storageBucket: env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || env.VITE_FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId:
+      env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: env.EXPO_PUBLIC_FIREBASE_APP_ID || env.VITE_FIREBASE_APP_ID || '',
+  };
   const firebaseDefine = Object.fromEntries(
     FIREBASE_KEYS.map((key) => [
       `process.env.EXPO_PUBLIC_${key}`,
@@ -140,20 +55,29 @@ export default defineConfig(({ mode }) => {
   );
 
   return {
+    root: ownerRoot,
     envDir: repoRoot,
-    envPrefix: ['VITE_', 'EXPO_PUBLIC_'],
-    define: firebaseDefine,
-    plugins: [react(), liveCatalogPlugin()],
+    envPrefix: ['VITE_', 'EXPO_PUBLIC_', 'LIVE_'],
+    define: {
+      ...firebaseDefine,
+      __PETSGO_FIREBASE_CONFIG__: JSON.stringify(firebaseInjected),
+    },
+    plugins: [react(), liveCatalogPlugin(env, false)],
     resolve: {
       alias: {
         '@petsgo/data': data,
         '@petsgo/lib': lib,
+        firebase: firebaseRoot,
       },
+    },
+    optimizeDeps: {
+      include: ['firebase/app', 'firebase/firestore'],
     },
     server: {
       port: 5173,
       open: true,
       host: true,
+      fs: { allow: [repoRoot] },
     },
   };
 });

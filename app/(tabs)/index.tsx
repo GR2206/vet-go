@@ -53,6 +53,7 @@ export default function HomeScreen() {
     setHeroBackdrop,
     bookings,
     walkBookings,
+    shopOrders,
     origin,
     ensureOrigin,
     placeReviews,
@@ -60,7 +61,7 @@ export default function HomeScreen() {
     toggleFavoriteProduct,
   } = useApp();
   const catalog = useLiveProducts();
-  const pendingCount = upcomingPendings(bookings, walkBookings).length;
+  const pendingCount = upcomingPendings(bookings, walkBookings, shopOrders).length;
   const name = pet?.name ?? 'Max';
   const firstName = user?.name?.split(' ')[0] ?? 'Gino';
   const [nowTick, setNowTick] = useState(0);

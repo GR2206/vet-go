@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,7 +20,7 @@ import { useApp } from '@/store/app-store';
 import { colors, fonts, radius, surface } from '@/theme/tokens';
 
 export default function ShopScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, rate } = useLocalSearchParams<{ id: string; rate?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
@@ -44,6 +44,11 @@ export default function ShopScreen() {
   const [comment, setComment] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const products = useLiveProducts();
+
+  useEffect(() => {
+    const n = Number(rate);
+    if (n >= 1 && n <= 5) setStars(Math.round(n));
+  }, [rate]);
 
   const raw = places.find((p) => p.id === id);
   const shop = raw ? resolvePlace(raw, placePhotos, placeAvatars) : undefined;
@@ -245,7 +250,7 @@ export default function ShopScreen() {
                   <Text style={styles.date}>{r.date}</Text>
                 </View>
                 <Stars value={r.rating} size={12} />
-                <Text style={styles.reviewTxt}>{r.text}</Text>
+                {r.text?.trim() ? <Text style={styles.reviewTxt}>{r.text}</Text> : null}
                 {mine ? (
                   <Pressable
                     onPress={() => {

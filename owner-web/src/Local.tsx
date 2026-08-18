@@ -3,6 +3,7 @@ import type { PaymentMethod, ShippingKind } from '@petsgo/data/types';
 import { paymentLabel, shippingLabel } from '@petsgo/lib/format';
 
 import { pickImage } from './files';
+import { CrispImg } from './ui/CrispImg';
 import { PAYMENT_OPTIONS, SHIPPING_OPTIONS, useOwner } from './store';
 
 export function Local() {
@@ -18,12 +19,12 @@ export function Local() {
     <section>
       <h1>Ficha del local</h1>
       <button type="button" className="cover-btn" onClick={() => pickImage(setCover)}>
-        <img src={coverUri} alt="" />
+        <CrispImg src={coverUri} alt="" photo />
         <span>Cambiar portada</span>
       </button>
       <div className="avatar-row">
         <button type="button" className="avatar-btn" onClick={() => pickImage(setAvatar)}>
-          <img src={avatarUri} alt="" />
+          <CrispImg src={avatarUri} alt="" photo />
         </button>
         <div>
           <p className="card-title">{shop.name}</p>

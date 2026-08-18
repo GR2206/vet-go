@@ -1,5 +1,5 @@
 import { startOfDay } from '@petsgo/lib/dates';
-import { formatARS, paymentLabel } from '@petsgo/lib/format';
+import { checkoutPayDetail, formatARS } from '@petsgo/lib/format';
 
 import { when } from './files';
 import { useOwner, type OwnerSale } from './store';
@@ -22,14 +22,15 @@ function tally(list: OwnerSale[]) {
 
 export function SaleCard({ order, variant }: { order: OwnerSale; variant: 'live' | 'history' }) {
   const { confirmOrder, deleteSale, restoreSale } = useOwner();
-  const confirmed = order.status !== 'awaiting_confirm';
+  const pending = order.status === 'awaiting_confirm';
+  const confirmed = !pending;
   return (
-    <li className={`card sale-card${order.archived ? ' dim' : ''}`}>
+    <li className={`card sale-card${order.archived ? ' dim' : ''}${pending ? ' sale-pending' : ''}`}>
       <div className="sale-top">
         <div>
-          <p className="card-title">{order.shipping.fullName}</p>
+          <p className="card-title">{order.shipping?.fullName || order.buyer}</p>
           <p className="muted">
-            {when(order.paidAt)} · {paymentLabel(order.method)}
+            {when(order.paidAt)} · {checkoutPayDetail(order)}
             {order.archived ? ' · En historial' : null}
           </p>
         </div>

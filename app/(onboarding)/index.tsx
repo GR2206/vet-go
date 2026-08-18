@@ -60,15 +60,19 @@ export default function OnboardingScreen() {
               onPress={() => setSpecies('dog')}
               style={[styles.species, species === 'dog' && styles.speciesOn]}
             >
-              <DogSilhouette size={88} color={species === 'dog' ? colors.navy : colors.muted} />
-              <Text style={styles.speciesLabel}>Perro</Text>
+              <View style={[styles.speciesMark, species === 'dog' && styles.speciesMarkOn]}>
+                <DogSilhouette size={72} color={species === 'dog' ? colors.navy : colors.muted} />
+              </View>
+              <Text style={[styles.speciesLabel, species === 'dog' && styles.speciesLabelOn]}>Perro</Text>
             </Pressable>
             <Pressable
               onPress={() => setSpecies('cat')}
               style={[styles.species, species === 'cat' && styles.speciesOn]}
             >
-              <CatSilhouette size={78} color={species === 'cat' ? colors.navy : colors.muted} />
-              <Text style={styles.speciesLabel}>Gato</Text>
+              <View style={[styles.speciesMark, species === 'cat' && styles.speciesMarkOn]}>
+                <CatSilhouette size={68} color={species === 'cat' ? colors.navy : colors.muted} />
+              </View>
+              <Text style={[styles.speciesLabel, species === 'cat' && styles.speciesLabelOn]}>Gato</Text>
             </Pressable>
           </View>
         </View>
@@ -133,12 +137,33 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: radius.lg,
     alignItems: 'center',
-    paddingVertical: 22,
-    borderWidth: 2,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    borderWidth: 1.5,
     borderColor: colors.line,
   },
-  speciesOn: { borderColor: colors.teal, backgroundColor: colors.tealSoft },
-  speciesLabel: { fontFamily: fonts.sansBold, marginTop: 8, color: colors.ink },
+  speciesOn: {
+    borderColor: colors.navy,
+    backgroundColor: colors.white,
+    shadowColor: colors.navy,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+  },
+  speciesMark: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: colors.creamDeep,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  speciesMarkOn: {
+    backgroundColor: '#F3EADF',
+  },
+  speciesLabel: { fontFamily: fonts.sansSemi, marginTop: 12, color: colors.muted, fontSize: 15 },
+  speciesLabelOn: { fontFamily: fonts.sansBold, color: colors.navy },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingHorizontal: 14,

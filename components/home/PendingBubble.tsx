@@ -8,13 +8,13 @@ import { colors, fonts, radius, surface } from '@/theme/tokens';
 
 export function PendingBubble() {
   const router = useRouter();
-  const { bookings, walkBookings } = useApp();
+  const { bookings, walkBookings, shopOrders } = useApp();
   const [, tick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => tick((n) => n + 1), 30_000);
     return () => clearInterval(id);
   }, []);
-  const items = upcomingPendings(bookings, walkBookings);
+  const items = upcomingPendings(bookings, walkBookings, shopOrders);
   const next = items[0];
 
   return (

@@ -11,6 +11,13 @@ import { useLiveProducts } from '@/lib/use-live-products';
 import { useApp } from '@/store/app-store';
 import { colors, fonts, surface } from '@/theme/tokens';
 
+function ownerPanelHelp() {
+  Alert.alert(
+    'Panel para comercios',
+    'Los dueños de local no entran por la app del tutor. Abrí el panel web en el navegador de tu PC o celular:\n\n· Desarrollo: http://localhost:5173\n· PIN demo Pichichos: 4411 · San Martín: 2580 · Luna: 1919\n\nPETS&GO te asigna el PIN cuando das de alta el local.',
+  );
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, pet, vouchers, setVip, shopOrders, favoritePlaceIds, favoriteProductIds } = useApp();
@@ -100,7 +107,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <Button label="Modo dueño (comercio)" variant="dark" onPress={() => router.push('/owner')} />
+        <Button label="¿Tenés un comercio?" variant="dark" onPress={ownerPanelHelp} />
         <Button
           label="Soy paseaperros"
           variant="ghost"
