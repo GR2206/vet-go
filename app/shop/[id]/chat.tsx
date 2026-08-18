@@ -19,7 +19,7 @@ import { places } from '@/data/mock';
 import type { ShopMessage } from '@/data/types';
 import { threadPetFromCartilla } from '@/lib/active-pet';
 import { chatTutorKey } from '@/lib/chat-tutor-key';
-import { chatThreadId, fetchLiveCatalog, isFirebaseConfigured, pushThreadPet } from '@/lib/live-catalog';
+import { chatThreadId, fetchLiveThread, isFirebaseConfigured, pushThreadPet } from '@/lib/live-catalog';
 import { resolvePlace } from '@/lib/place';
 import { responseSpeedLabel } from '@/lib/shop';
 import { useApp } from '@/store/app-store';
@@ -50,11 +50,9 @@ export default function ShopChatScreen() {
     if (!shop) return;
     const tutorKey = chatTutorKey(user, me);
     try {
-      const file = await fetchLiveCatalog();
-      setSyncIssue(false);
-      const threads = file.shops[shop.id]?.threads ?? [];
       const threadId = chatThreadId(shop.id, tutorKey);
-      const own = threads.find((t) => t.id === threadId);
+      const own = await fetchLiveThread(shop.id, threadId);
+      setSyncIssue(false);
       if (own?.messages?.length) mergeShopChatFromLive(shop.id, own.messages);
       const petMeta = threadPetFromCartilla(pet);
       if (own && petMeta) {

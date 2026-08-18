@@ -81,6 +81,7 @@ export type ShopThread = {
   id: string;
   shopId: string;
   userName: string;
+  buyerUid?: string;
   petName?: string;
   petSpecies?: 'dog' | 'cat';
   messages: ShopMessage[];

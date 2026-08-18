@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { threadPetFromCartilla } from '@/lib/active-pet';
 import { chatTutorKey } from '@/lib/chat-tutor-key';
-import { chatThreadId, fetchLiveCatalog, pushThreadPet } from '@/lib/live-catalog';
+import { chatThreadId, fetchLiveThread, pushThreadPet } from '@/lib/live-catalog';
 import { useApp } from '@/store/app-store';
 
 export function ChatSyncBridge() {
@@ -26,11 +26,10 @@ export function ChatSyncBridge() {
     let on = true;
     const pull = async () => {
       try {
-        const file = await fetchLiveCatalog();
-        if (!on) return;
         for (const shopId of shopIds) {
           const threadId = chatThreadId(shopId, tutorKey);
-          const own = (file.shops[shopId]?.threads ?? []).find((t) => t.id === threadId);
+          const own = await fetchLiveThread(shopId, threadId);
+          if (!on) return;
           if (own?.messages?.length) mergeShopChatFromLive(shopId, own.messages);
           if (!own || !petMeta) continue;
           const key = `${own.id}:${petMeta.petName}:${petMeta.petSpecies ?? ''}`;

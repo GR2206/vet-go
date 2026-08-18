@@ -20,6 +20,7 @@ import 'react-native-reanimated';
 import { AppProvider } from '@/store/app-store';
 import { OrderSyncBridge } from '@/components/OrderSyncBridge';
 import { ChatSyncBridge } from '@/components/ChatSyncBridge';
+import { ensureTutorSignedIn } from '@/lib/firebase-auth';
 import { getFirestoreDb, isFirebaseConfigured } from '@/lib/firebase';
 import { BackLink } from '@/components/ui/BackLink';
 import { colors, fonts } from '@/theme/tokens';
@@ -63,7 +64,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => undefined);
-    if (isFirebaseConfigured()) getFirestoreDb();
+    if (isFirebaseConfigured()) {
+      getFirestoreDb();
+      void ensureTutorSignedIn();
+    }
   }, []);
 
   return (

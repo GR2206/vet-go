@@ -4,7 +4,10 @@ import {
   cloudAskStock,
   cloudDeductStock,
   cloudDismissAsk,
-  cloudFetchCatalog,
+  cloudFetchPublicCatalog,
+  cloudFetchShopLive,
+  cloudGetOrder,
+  cloudGetThread,
   cloudPatchOrder,
   cloudPatchThreadPet,
   cloudPublishCatalog,
@@ -15,7 +18,7 @@ import {
 import { mergeLiveCatalogFiles } from './merge-catalog';
 import { isAppAction, isOwnerAction, liveAppWriteKeyFromEnv } from './live-catalog-security';
 import { shopIdForPin, shopName } from './owner-pins';
-import { isSeedProductId } from './seed-live';
+import { ensureOwnerSignedIn, ensureTutorSignedIn, signOutFirebase } from './firebase-auth';
 
 export { liveCatalogUrl, resolveLiveApiBase } from './live-api-url';
 export { isFirebaseConfigured, getFirestoreDb } from './firebase';
@@ -34,6 +37,7 @@ export type LiveShopOrder = {
   shopId: string;
   shopName?: string;
   buyer: string;
+  buyerUid?: string;
   items: { productId: string; name: string; qty: number; unitPrice: number }[];
   gross: number;
   fee: number;
@@ -147,11 +151,11 @@ async function fetchLocalLiveCatalog(): Promise<LiveCatalogFile | null> {
   }
 }
 
-export async function fetchLiveCatalog(): Promise<LiveCatalogFile> {
+export async function fetchLiveCatalog(opts?: { shopId?: string }): Promise<LiveCatalogFile> {
   const parts: LiveCatalogFile[] = [];
   if (isFirebaseConfigured()) {
     try {
-      parts.push(await cloudFetchCatalog());
+      parts.push(opts?.shopId ? await cloudFetchShopLive(opts.shopId) : await cloudFetchPublicCatalog());
     } catch (err) {
       console.warn('[PETS&GO] cloudFetchCatalog failed', err);
     }
@@ -160,6 +164,18 @@ export async function fetchLiveCatalog(): Promise<LiveCatalogFile> {
   if (local) parts.push(local);
   if (!parts.length) throw new Error('live-catalog');
   return mergeLiveCatalogFiles(parts);
+}
+
+export async function fetchLiveOrder(shopId: string, orderId: string) {
+  if (!isFirebaseConfigured()) return null;
+  await ensureTutorSignedIn();
+  return cloudGetOrder(shopId, orderId);
+}
+
+export async function fetchLiveThread(shopId: string, threadId: string) {
+  if (!isFirebaseConfigured()) return null;
+  await ensureTutorSignedIn();
+  return cloudGetThread(shopId, threadId);
 }
 
 export type LivePushResult =
@@ -387,11 +403,16 @@ export async function ownerLogin(pin: string): Promise<OwnerSession & { error?: 
       body: JSON.stringify({ pin }),
     });
     const data = (await readJson(res)) as (OwnerSession & { error?: string }) | null;
-    if (data?.ok) return data;
+    if (data?.ok) {
+      await ensureOwnerSignedIn(data.shopId);
+      return data;
+    }
   } catch {
     /* hosting sin API local */
   }
-  return pinSession(pin);
+  const local = pinSession(pin);
+  if (local.ok) await ensureOwnerSignedIn(local.shopId);
+  return local;
 }
 
 export async function ownerLogout() {
@@ -400,6 +421,7 @@ export async function ownerLogout() {
   } catch {
     /* offline */
   }
+  await signOutFirebase();
 }
 
 export async function ownerSession(): Promise<OwnerSession> {

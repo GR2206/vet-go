@@ -1,32 +1,79 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /shops/{shopId} {
-      allow read: if true;
-      allow create, update: if true;
-    }
-    match /shops/{shopId}/products/{productId} {
-      allow read: if true;
-      allow create, update, delete: if true;
-    }
-    match /shops/{shopId}/orders/{orderId} {
-      allow read: if true;
-      allow create, update: if true;
-    }
-    match /shops/{shopId}/asks/{askId} {
-      allow read: if true;
-      allow create, delete: if true;
-    }
-    match /shops/{shopId}/threads/{threadId} {
-      allow read: if true;
-      allow create, update: if true;
-      match /messages/{msgId} {
-        allow read: if true;
-        allow create: if request.resource.data.from in ['user', 'shop']
-          && request.resource.data.text is string
-          && request.resource.data.text.size() >= 1
-          && request.resource.data.text.size() <= 800;
-      }
-    }
-  }
-}
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(shopId) {
+      return signedIn() && request.auth.token.email == shopId + '@owners.petsgo.app';
+    }
+    function isBuyer() {
+      return signedIn() && resource.data.buyerUid == request.auth.uid;
+    }
+
+    match /shops/{shopId} {
+      allow read: if true;
+      allow create: if isOwner(shopId);
+      allow update: if isOwner(shopId) || (
+        signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'syncedAt'])
+      );
+    }
+
+    match /shops/{shopId}/products/{productId} {
+      allow read: if true;
+      allow create, delete: if isOwner(shopId);
+      allow update: if isOwner(shopId) || (
+        signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
+        && request.resource.data.stock is number
+        && request.resource.data.stock >= 0
+        && request.resource.data.stock <= resource.data.stock
+      );
+    }
+
+    match /shops/{shopId}/orders/{orderId} {
+      allow get: if isOwner(shopId) || isBuyer();
+      allow list: if isOwner(shopId);
+      allow create: if signedIn()
+        && request.resource.data.shopId == shopId
+        && request.resource.data.buyerUid == request.auth.uid
+        && request.resource.data.id == orderId;
+      allow update: if isOwner(shopId) || (
+        isBuyer()
+        && request.resource.data.buyerUid == resource.data.buyerUid
+        && request.resource.data.shopId == resource.data.shopId
+      );
+    }
+
+    match /shops/{shopId}/asks/{askId} {
+      allow read, delete: if isOwner(shopId);
+      allow create: if signedIn() && request.resource.data.shopId == shopId;
+    }
+
+    match /shops/{shopId}/threads/{threadId} {
+      allow get: if isOwner(shopId) || (signedIn() && resource.data.buyerUid == request.auth.uid);
+      allow list: if isOwner(shopId);
+      allow create: if signedIn()
+        && request.resource.data.shopId == shopId
+        && (isOwner(shopId) || request.resource.data.buyerUid == request.auth.uid);
+      allow update: if isOwner(shopId) || (signedIn() && resource.data.buyerUid == request.auth.uid);
+
+      match /messages/{msgId} {
+        function parentThread() {
+          return get(/databases/$(database)/documents/shops/$(shopId)/threads/$(threadId)).data;
+        }
+        allow read: if isOwner(shopId) || (signedIn() && parentThread().buyerUid == request.auth.uid);
+        allow create: if signedIn()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 800
+          && request.resource.data.from in ['user', 'shop']
+          && (
+            (isOwner(shopId) && request.resource.data.from == 'shop')
+            || (parentThread().buyerUid == request.auth.uid && request.resource.data.from == 'user')
+          );
+      }
+    }
+  }
+}

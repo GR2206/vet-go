@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { fetchLiveCatalog } from '@/lib/live-catalog';
+import { fetchLiveOrder } from '@/lib/live-catalog';
 import { notifyOrderConfirmed, initNotifications } from '@/lib/notifications';
 import { useApp } from '@/store/app-store';
 
@@ -39,11 +39,10 @@ export function OrderSyncBridge() {
     let on = true;
     const pull = async () => {
       try {
-        const file = await fetchLiveCatalog();
-        if (!on) return;
         for (const order of shopOrders) {
           if (order.deliveryStatus === 'cancelled') continue;
-          const live = file.shops[order.shopId]?.orders?.find((o) => o.id === order.id);
+          const live = await fetchLiveOrder(order.shopId, order.id);
+          if (!on) return;
           if (!live) continue;
           if (
             order.deliveryStatus === 'received' ||

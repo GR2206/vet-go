@@ -25,7 +25,7 @@ import { mergeSheetProducts, type SheetProductRow } from '@petsgo/lib/sheet-cata
 import { PRODUCT_PLACEHOLDER, validateProductForPublish } from './files';
 
 const PIN_KEY = 'petsgo.owner.pin';
-const SAVE_KEY = (shopId: string) => `petsgo.owner.v3.${shopId}`;
+const SAVE_KEY = (shopId: string) => `petsgo.owner.v4.${shopId}`;
 const CHAT_KEEP_MS = 30 * DAY_MS;
 
 export type Tab = 'resumen' | 'ventas' | 'catalogo' | 'ofertas' | 'turnos' | 'equipo' | 'chat' | 'local' | 'soporte';
@@ -553,7 +553,7 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     let on = true;
     const pull = async () => {
       try {
-        const file = await fetchLiveCatalog();
+        const file = await fetchLiveCatalog({ shopId: base.id });
         const live = file.shops[base.id];
         if (!live || !on) return;
         setStockAsks(live.asks ?? []);

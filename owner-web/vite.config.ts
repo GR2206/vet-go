@@ -61,6 +61,9 @@ export default defineConfig(({ mode }) => {
     define: {
       ...firebaseDefine,
       __PETSGO_FIREBASE_CONFIG__: JSON.stringify(firebaseInjected),
+      __PETSGO_OWNER_AUTH_SECRET__: JSON.stringify(
+        env.LIVE_SESSION_SECRET || env.VITE_OWNER_AUTH_SECRET || '',
+      ),
     },
     plugins: [react(), liveCatalogPlugin(env, false)],
     resolve: {
