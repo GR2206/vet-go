@@ -58,7 +58,7 @@ export default function PendingScreen() {
       rating: stars,
       text: comment.trim(),
     });
-    markOrderRated(orderId);
+    markOrderRated(orderId, { rating: stars, text: comment.trim() });
     setRatingOrderId(null);
     setComment('');
     setStars(5);
@@ -176,9 +176,32 @@ export default function PendingScreen() {
                           <Text style={styles.rateText}>Calificar tienda</Text>
                         </Pressable>
                       )
+                    ) : item.order.tutorRating ? (
+                      <View style={styles.rateBox}>
+                        <Text style={styles.rateLabel}>
+                          Tu calificación · {'★'.repeat(item.order.tutorRating.rating)}
+                          {'☆'.repeat(Math.max(0, 5 - item.order.tutorRating.rating))}
+                        </Text>
+                        {item.order.tutorRating.text ? (
+                          <Text style={styles.doneText}>“{item.order.tutorRating.text}”</Text>
+                        ) : (
+                          <Text style={styles.doneText}>Sin comentario</Text>
+                        )}
+                      </View>
                     ) : (
                       <Text style={styles.doneText}>Tienda calificada</Text>
                     )}
+                    {item.order.buyerRating ? (
+                      <View style={styles.rateBox}>
+                        <Text style={styles.rateLabel}>
+                          El local te calificó · {'★'.repeat(item.order.buyerRating.rating)}
+                          {'☆'.repeat(Math.max(0, 5 - item.order.buyerRating.rating))}
+                        </Text>
+                        {item.order.buyerRating.text ? (
+                          <Text style={styles.doneText}>“{item.order.buyerRating.text}”</Text>
+                        ) : null}
+                      </View>
+                    ) : null}
                     <Button
                       label="Cerrar"
                       variant="ghost"

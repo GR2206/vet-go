@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { defaultShopChats, places, products, professionals, services } from '@petsgo/data/mock';
 import type {
   OrderDeliveryStatus,
+  OrderRating,
   PaymentMethod,
   Place,
   Product,
@@ -16,7 +17,7 @@ import type {
 } from '@petsgo/data/types';
 import { DAY_MS, endOfDay } from '@petsgo/lib/dates';
 import { liveOffers } from '@petsgo/lib/offers';
-import { publishShopCatalog, fetchLiveCatalog, dismissShopAsk, ownerLogin, ownerLogout, ownerSession, confirmLiveOrder, archiveLiveOrder, replyLiveChat, type LiveShopOrder, type LiveShopThread, type StockAsk } from '@petsgo/lib/live-catalog';
+import { publishShopCatalog, fetchLiveCatalog, dismissShopAsk, ownerLogin, ownerLogout, ownerSession, confirmLiveOrder, archiveLiveOrder, replyLiveChat, rateLiveBuyer, type LiveShopOrder, type LiveShopThread, type StockAsk } from '@petsgo/lib/live-catalog';
 import { formatARS } from '@petsgo/lib/format';
 import { splitSale } from '@petsgo/lib/payout';
 import { mergeSheetProducts, type SheetProductRow } from '@petsgo/lib/sheet-catalog';
@@ -50,6 +51,8 @@ export type OwnerSale = {
   confirmedAt?: number;
   receivedAt?: number;
   deliveryStatus?: OrderDeliveryStatus;
+  tutorRating?: OrderRating;
+  buyerRating?: OrderRating;
   alertText?: string;
   archived?: boolean;
 };
@@ -542,6 +545,8 @@ function liveOrderToOwnerSale(order: LiveShopOrder): OwnerSale {
     confirmedAt: order.confirmedAt,
     receivedAt: order.receivedAt,
     deliveryStatus: delivery,
+    tutorRating: order.tutorRating,
+    buyerRating: order.buyerRating,
     shipping: order.shipping ?? {
       firstName: buyer,
       lastName: '',
@@ -662,6 +667,7 @@ type Store = {
   setSalesAutoExpire: (on: boolean) => void;
   deleteSale: (orderId: string) => void;
   restoreSale: (orderId: string) => void;
+  rateBuyer: (orderId: string, rating: { rating: number; text?: string }) => void;
   notices: ShopNotice[];
   dismissNotice: (id: string) => void;
   confirmOrder: (orderId: string) => void;
@@ -882,7 +888,7 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
           setNotices((prev) => [
             ...mapped.map((s) => ({
               id: `nt-sale-${s.id}`,
-              text: `Nuevo pedido de ${s.buyer} · ${formatARS(s.gross)}`,
+              text: `🛒 Nuevo pedido de ${s.buyer} · ${formatARS(s.gross)}`,
               at: Date.now(),
             })),
             ...prev,
@@ -902,14 +908,14 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
           ) {
             deliveryNotices.push({
               id: `nt-recv-${order.id}`,
-              text: `El producto llegó bien · ${who}`,
+              text: `📦 El producto llegó bien · ${who}`,
               at: Date.now(),
             });
           }
           if (to === 'rated') {
             deliveryNotices.push({
               id: `nt-rate-${order.id}`,
-              text: `Te han calificado · ${who}`,
+              text: `⭐ Te han calificado · ${who}`,
               at: Date.now(),
             });
           }
@@ -939,7 +945,9 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
               s.payKind === hit.payKind &&
               s.cardLast4 === hit.cardLast4 &&
               s.deliveryStatus === deliveryStatus &&
-              s.receivedAt === (hit.receivedAt ?? s.receivedAt)
+              s.receivedAt === (hit.receivedAt ?? s.receivedAt) &&
+              s.tutorRating?.at === (hit.tutorRating?.at ?? s.tutorRating?.at) &&
+              s.buyerRating?.at === (hit.buyerRating?.at ?? s.buyerRating?.at)
             ) {
               return s;
             }
@@ -949,6 +957,8 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
               confirmedAt: s.confirmedAt ?? hit.confirmedAt,
               receivedAt: s.receivedAt ?? hit.receivedAt,
               deliveryStatus,
+              tutorRating: hit.tutorRating ?? s.tutorRating,
+              buyerRating: hit.buyerRating ?? s.buyerRating,
               payKind: hit.payKind ?? s.payKind,
               cardBrand: hit.cardBrand ?? s.cardBrand,
               cardLast4: hit.cardLast4 ?? s.cardLast4,
@@ -966,7 +976,7 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
               setNotices((nPrev) => [
                 ...freshThreads.map((t) => ({
                   id: `nt-chat-${t.id}-${t.updatedAt}`,
-                  text: `Nuevo chat de ${t.userName}`,
+                  text: `💬 Nuevo chat de ${t.userName}`,
                   at: Date.now(),
                 })),
                 ...nPrev,
@@ -1146,6 +1156,15 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         setSales((prev) => prev.map((s) => (s.id === orderId ? { ...s, archived: false } : s)));
         if (base?.id) void archiveLiveOrder(base.id, orderId, false);
       },
+      rateBuyer: (orderId, rating) => {
+        const buyerRating = {
+          rating: Math.min(5, Math.max(1, Math.round(rating.rating))),
+          text: (rating.text ?? '').trim().slice(0, 400),
+          at: Date.now(),
+        };
+        setSales((prev) => prev.map((s) => (s.id === orderId ? { ...s, buyerRating } : s)));
+        if (base?.id) void rateLiveBuyer(base.id, orderId, rating);
+      },
       notices,
       dismissNotice: (id) => setNotices((prev) => prev.filter((n) => n.id !== id)),
       confirmOrder: (orderId) => {
@@ -1158,7 +1177,7 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         setNotices((prev) => [
           {
             id: `nt-${orderId}-${Date.now()}`,
-            text: 'Pedido confirmado correctamente.',
+            text: '✅ Pedido confirmado correctamente.',
             at: Date.now(),
           },
           ...prev,

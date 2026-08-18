@@ -30,7 +30,10 @@ export function OrderSyncBridge() {
     const active = shopOrders.some(
       (o) =>
         o.deliveryStatus === 'awaiting_shop' ||
-        o.deliveryStatus === 'confirmed',
+        o.deliveryStatus === 'confirmed' ||
+        ((o.deliveryStatus === 'received' || o.deliveryStatus === 'rated') &&
+          !o.buyerRating &&
+          !o.pendingDismissed),
     );
     if (!active) return;
     let on = true;
@@ -39,15 +42,17 @@ export function OrderSyncBridge() {
         const file = await fetchLiveCatalog();
         if (!on) return;
         for (const order of shopOrders) {
+          if (order.deliveryStatus === 'cancelled') continue;
+          const live = file.shops[order.shopId]?.orders?.find((o) => o.id === order.id);
+          if (!live) continue;
           if (
             order.deliveryStatus === 'received' ||
-            order.deliveryStatus === 'rated' ||
-            order.deliveryStatus === 'cancelled'
+            order.deliveryStatus === 'rated'
           ) {
+            if (live.buyerRating || live.tutorRating) syncShopOrderFromLive(order.id, live);
             continue;
           }
-          const live = file.shops[order.shopId]?.orders?.find((o) => o.id === order.id);
-          if (live) syncShopOrderFromLive(order.id, live);
+          syncShopOrderFromLive(order.id, live);
         }
       } catch {
         /* panel apagado */

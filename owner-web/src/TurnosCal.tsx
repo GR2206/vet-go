@@ -158,17 +158,17 @@ export function TurnosCal() {
     <section className="cal-page">
       <div className="cal-top">
         <div>
-          <h1>Turnos</h1>
+          <h1>📅 Turnos</h1>
         </div>
         <div className="cal-views">
           <button type="button" className={view === 'month' ? 'seg month on' : 'seg month'} onClick={() => setView('month')}>
-            Ver por mes
+            🗓️ Ver por mes
           </button>
           <button type="button" className={view === 'week' ? 'seg week on' : 'seg week'} onClick={() => setView('week')}>
-            Ver por semana
+            📅 Ver por semana
           </button>
           <button type="button" className={view === 'day' ? 'seg day on' : 'seg day'} onClick={() => setView('day')}>
-            Ver por día
+            📍 Ver por día
           </button>
         </div>
       </div>
@@ -203,7 +203,7 @@ export function TurnosCal() {
           →
         </button>
         <button type="button" className="ghost" onClick={() => setCursor(atMidnight(new Date()))}>
-          Hoy
+          ☀️ Hoy
         </button>
         <p className="cal-legend">
           <span className="cal-chip vet">
@@ -261,7 +261,7 @@ export function TurnosCal() {
       {view === 'day' ? (
         <div className="agenda">
           {dayList.length === 0 ? (
-            <p className="muted">No hay turnos este día.</p>
+            <p className="muted">🐾 No hay turnos este día.</p>
           ) : (
             dayList.map((ap) => {
               const open = openId === ap.id;

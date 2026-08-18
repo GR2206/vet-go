@@ -23,7 +23,7 @@ function ProductFields({
         onClick={() => pickImage((uri) => onUpdate({ image: uri }))}
       >
         <CrispImg src={product.image || PRODUCT_PLACEHOLDER} alt="" photo />
-        <span>{product.image && product.image !== PRODUCT_PLACEHOLDER ? 'Cambiar foto' : 'Cargar foto'}</span>
+        <span>{product.image && product.image !== PRODUCT_PLACEHOLDER ? '📷 Cambiar foto' : '📷 Cargar foto'}</span>
       </button>
       <div className="fields">
         <label>
@@ -169,7 +169,7 @@ export function Catalog() {
 
   return (
     <section>
-      <h1>Catálogo</h1>
+      <h1>📦 Catálogo</h1>
       <p className="muted">
         Cargá foto y datos del producto. Recién al tocar <b>Publicar</b> aparece en la tienda de la app.
       </p>
@@ -195,7 +195,7 @@ export function Catalog() {
           void onFile(e.dataTransfer.files[0]);
         }}
       >
-        <p className="drop-title">Cajón de planilla</p>
+        <p className="drop-title">📥 Cajón de planilla</p>
         <p>
           Arrastrá un Excel o CSV con columnas: <b>nombre</b>, <b>precio</b>, <b>stock</b>,{' '}
           <b>descripcion</b>. Opcional: categoria, unidad, foto (URL), especie, descuento, sku.
@@ -206,7 +206,7 @@ export function Catalog() {
         </p>
         <div className="drop-actions">
           <label className="primary file-btn">
-            Elegir archivo
+            📁 Elegir archivo
             <input
               type="file"
               accept=".xlsx,.xls,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
@@ -218,7 +218,7 @@ export function Catalog() {
             />
           </label>
           <a className="ghost" href="/plantilla-catalogo.csv" download>
-            Bajar plantilla
+            ⬇️ Bajar plantilla
           </a>
         </div>
         <div className="sheet-url">
@@ -228,7 +228,7 @@ export function Catalog() {
             placeholder="O pegá un Google Sheet publicado como CSV"
           />
           <button type="button" className="ghost" disabled={busy} onClick={() => void onUrl()}>
-            Leer sheet
+            🔗 Leer sheet
           </button>
         </div>
         {busy ? <p className="muted">Leyendo…</p> : null}
@@ -238,7 +238,7 @@ export function Catalog() {
 
       <div className="toolbar">
         <button type="button" className="primary" onClick={addProduct}>
-          Nuevo producto
+          ➕ Nuevo producto
         </button>
         <p className="muted">
           {list.length} publicados
@@ -250,7 +250,7 @@ export function Catalog() {
 
       {drafts.length ? (
         <>
-          <h2 className="section-h2">Sin publicar</h2>
+          <h2 className="section-h2">📝 Sin publicar</h2>
           <p className="muted">Estos productos no los ve el tutor hasta que confirmes con Publicar.</p>
           <ul className="list">
             {drafts.map((p) => (
@@ -258,10 +258,10 @@ export function Catalog() {
                 <ProductFields product={p} onUpdate={(patch) => updateDraft(p.id, patch)} />
                 <div className="draft-actions">
                   <button type="button" className="primary" onClick={() => onPublish(p.id)}>
-                    Publicar
+                    🚀 Publicar
                   </button>
                   <button type="button" className="ghost" onClick={() => discardDraft(p.id)}>
-                    Descartar
+                    🗑️ Descartar
                   </button>
                   {draftErr[p.id] ? <p className="err draft-err">{draftErr[p.id]}</p> : null}
                 </div>
@@ -272,18 +272,18 @@ export function Catalog() {
       ) : null}
 
       {catalog.length === 0 && drafts.length === 0 ? (
-        <p className="muted">Este local todavía no tiene productos. Cargá la planilla o creá uno.</p>
+        <p className="muted">🛒 Este local todavía no tiene productos. Cargá la planilla o creá uno.</p>
       ) : catalog.length > 0 && list.length === 0 ? (
         <p className="muted">Ningún producto publicado coincide con “{q}”.</p>
       ) : list.length ? (
         <>
-          <h2 className="section-h2">En la tienda</h2>
+          <h2 className="section-h2">🏪 En la tienda</h2>
           <ul className="list">
             {list.map((p) => (
               <li key={p.id} className={paused[p.id] ? 'card editor dim' : 'card editor'}>
                 <ProductFields product={p} onUpdate={(patch) => updateProduct(p.id, patch)} />
                 <button type="button" className="ghost" onClick={() => togglePaused(p.id)}>
-                  {paused[p.id] ? 'Reactivar' : 'Pausar'}
+                  {paused[p.id] ? '▶️ Reactivar' : '⏸️ Pausar'}
                 </button>
               </li>
             ))}

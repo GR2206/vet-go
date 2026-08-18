@@ -39,7 +39,7 @@ export function Support() {
 
   return (
     <section>
-      <h1>Soporte GR Producciones</h1>
+      <h1>🛟 Soporte GR Producciones</h1>
       <div className="support-ways">
         <a className="support-chip" href={MAIL}>
           <MailLogo />
@@ -56,7 +56,7 @@ export function Support() {
           </span>
         </a>
       </div>
-      <h2 className="subhead">Chat en vivo</h2>
+      <h2 className="subhead">💬 Chat en vivo</h2>
       <p className="muted">Queda en el panel. Cuando esté la nube, lo ves en tu usuario admin.</p>
       <article className="chat-box support-live">
         <header className="chat-box-head">
@@ -86,7 +86,7 @@ export function Support() {
               setText('');
             }}
           >
-            Enviar
+            Enviar 📤
           </button>
         </div>
       </article>

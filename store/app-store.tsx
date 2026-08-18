@@ -160,7 +160,7 @@ type Store = Session & {
   syncShopOrderFromLive: (orderId: string, live: LiveShopOrder) => void;
   markOrderConfirmNotified: (orderId: string) => void;
   markOrderReceived: (orderId: string) => void;
-  markOrderRated: (orderId: string) => void;
+  markOrderRated: (orderId: string, rating?: { rating: number; text?: string }) => void;
   dismissPendingOrder: (orderId: string) => void;
   cancelOrder: (orderId: string) => void;
 };
@@ -194,6 +194,8 @@ function hydrateOrders(orders: ShopOrder[] | undefined): ShopOrder[] {
     pendingOpen: o.pendingOpen ?? false,
     pendingDismissed: o.pendingDismissed ?? false,
     ratedAt: o.ratedAt,
+    tutorRating: o.tutorRating,
+    buyerRating: o.buyerRating,
   }));
 }
 
@@ -797,6 +799,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               deliveryStatus: status,
               confirmedAt: live.confirmedAt ?? o.confirmedAt,
               receivedAt: live.receivedAt ?? o.receivedAt,
+              tutorRating: live.tutorRating ?? o.tutorRating,
+              buyerRating: live.buyerRating ?? o.buyerRating,
               payKind:
                 live.payKind === 'credit' || live.payKind === 'debit'
                   ? live.payKind
@@ -845,11 +849,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
           };
         });
       },
-      markOrderRated: (orderId) => {
+      markOrderRated: (orderId, rating) => {
         setSession((s) => {
           const order = s.shopOrders.find((o) => o.id === orderId);
           if (!order) return s;
-          void rateLiveOrder(order.shopId, orderId);
+          void rateLiveOrder(order.shopId, orderId, rating);
+          const tutorRating = rating
+            ? {
+                rating: Math.min(5, Math.max(1, Math.round(rating.rating))),
+                text: (rating.text ?? '').trim().slice(0, 400),
+                at: Date.now(),
+              }
+            : order.tutorRating;
           return {
             ...s,
             shopOrders: s.shopOrders.map((o) =>
@@ -858,6 +869,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     ...o,
                     deliveryStatus: 'rated' as const,
                     ratedAt: o.ratedAt ?? Date.now(),
+                    tutorRating,
                     pendingOpen: true,
                     pendingDismissed: false,
                   }

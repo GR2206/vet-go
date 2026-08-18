@@ -86,7 +86,7 @@ export function Chat() {
     <section className="chat-page">
       <div className="chat-head">
         <div>
-          <h1>Chat con tutores</h1>
+          <h1>💬 Chat con tutores</h1>
         </div>
         <div className="chat-tools">
           <button
@@ -94,7 +94,7 @@ export function Chat() {
             className={chatAutoExpire ? 'ghost' : 'primary'}
             onClick={() => setChatAutoExpire(!chatAutoExpire)}
           >
-            {chatAutoExpire ? 'Caducidad 30 días: on' : 'Caducidad anulada'}
+            {chatAutoExpire ? '⏳ Caducidad 30 días: on' : '♾️ Caducidad anulada'}
           </button>
           <button
             type="button"
@@ -103,7 +103,7 @@ export function Chat() {
               window.open(`${window.location.pathname}#/historial`, '_blank', 'noopener')
             }
           >
-            Historial 30 días
+            📜 Historial 30 días
           </button>
         </div>
       </div>
@@ -114,7 +114,7 @@ export function Chat() {
       </p>
       <div className="chat-split">
         <aside className="inbox">
-          {inbox.length === 0 ? <p className="muted">No hay chats activos.</p> : null}
+          {inbox.length === 0 ? <p className="muted">🐾 No hay chats activos.</p> : null}
           {inbox.map((t) => {
             const last = t.messages?.[t.messages.length - 1];
             const on = openThreadIds.includes(t.id);
@@ -138,7 +138,7 @@ export function Chat() {
         </aside>
         <div className="chat-desk">
           {open.length === 0 ? (
-            <p className="muted">Abrí un recuadro desde la bandeja para responder.</p>
+            <p className="muted">👉 Abrí un recuadro desde la bandeja para responder.</p>
           ) : (
             open.map((t) => (
               <ChatBox
@@ -200,10 +200,10 @@ function ChatBox({
         </div>
         <div className="chat-box-actions">
           <button type="button" className="ghost" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? 'Achicar' : 'Ampliar'}
+            {expanded ? '🔽 Achicar' : '🔼 Ampliar'}
           </button>
           <button type="button" className="ghost" onClick={onRequestClose}>
-            Cerrar
+            ✖️ Cerrar
           </button>
           <button
             type="button"
@@ -213,7 +213,7 @@ function ChatBox({
               onClosed();
             }}
           >
-            Borrar
+            🗑️ Borrar
           </button>
         </div>
       </header>
@@ -240,7 +240,7 @@ function ChatBox({
             setText('');
           }}
         >
-          Enviar
+          Enviar 📤
         </button>
       </div>
     </article>

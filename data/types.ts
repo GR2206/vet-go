@@ -192,6 +192,12 @@ export type ShopOrderItem = {
   unitPrice: number;
 };
 
+export type OrderRating = {
+  rating: number;
+  text: string;
+  at: number;
+};
+
 export type OrderDeliveryStatus = 'awaiting_shop' | 'confirmed' | 'received' | 'rated' | 'cancelled';
 
 export type ShopOrder = {
@@ -211,6 +217,8 @@ export type ShopOrder = {
   confirmedAt?: number;
   receivedAt?: number;
   ratedAt?: number;
+  tutorRating?: OrderRating;
+  buyerRating?: OrderRating;
   confirmNotified?: boolean;
   pendingOpen?: boolean;
   pendingDismissed?: boolean;

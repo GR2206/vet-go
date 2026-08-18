@@ -6,6 +6,7 @@ import {
   isOwnerAction,
   liveAppWriteKeyFromEnv,
   sanitizeId,
+  sanitizeOrderRating,
   sanitizeText,
 } from '../../lib/live-catalog-security';
 import { isKnownShopId, shopIdForPin, shopName } from './pin-registry';
@@ -183,6 +184,8 @@ function validateOrder(raw: unknown) {
     deliveryStatus,
     confirmedAt: clampInt(o.confirmedAt, 0, 9_999_999_999_999, 0) || undefined,
     receivedAt: clampInt(o.receivedAt, 0, 9_999_999_999_999, 0) || undefined,
+    tutorRating: sanitizeOrderRating(o.tutorRating),
+    buyerRating: sanitizeOrderRating(o.buyerRating),
     paidAt: clampInt(o.paidAt, 0, 9_999_999_999_999),
     createdAt: clampInt(o.createdAt, 0, 9_999_999_999_999),
     items: items.map((it) => {
@@ -529,7 +532,32 @@ export function createLiveCatalogMiddleware(opts: HandlerOpts) {
           return;
         }
         const order = hit as Record<string, unknown>;
+        const rating = sanitizeOrderRating({
+          rating: body.rating,
+          text: body.text,
+          at: Date.now(),
+        });
         order.deliveryStatus = 'rated';
+        if (rating) order.tutorRating = rating;
+        row.updatedAt = Date.now();
+      } else if (action === 'rate_buyer') {
+        const row = shopOf(db, shopId);
+        const orderId = sanitizeId(body.orderId);
+        const hit = row.orders!.find((o) => (o as { id: string }).id === orderId);
+        if (!hit) {
+          send({ error: 'order_not_found' }, 404);
+          return;
+        }
+        const rating = sanitizeOrderRating({
+          rating: body.rating,
+          text: body.text,
+          at: Date.now(),
+        });
+        if (!rating) {
+          send({ error: 'invalid_rating' }, 400);
+          return;
+        }
+        (hit as Record<string, unknown>).buyerRating = rating;
         row.updatedAt = Date.now();
       } else if (action === 'cancel_order') {
         const row = shopOf(db, shopId);

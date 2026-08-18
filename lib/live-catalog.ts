@@ -43,6 +43,8 @@ export type LiveShopOrder = {
   ownerArchived?: boolean;
   confirmedAt?: number;
   receivedAt?: number;
+  tutorRating?: import('../data/types').OrderRating;
+  buyerRating?: import('../data/types').OrderRating;
   shipping: import('../data/types').ShippingAddress;
   createdAt: number;
   paidAt: number;
@@ -260,6 +262,8 @@ export function shopOrderToLive(order: import('../data/types').ShopOrder): LiveS
     deliveryStatus: order.deliveryStatus,
     confirmedAt: order.confirmedAt,
     receivedAt: order.receivedAt,
+    tutorRating: order.tutorRating,
+    buyerRating: order.buyerRating,
     shipping: order.shipping,
     createdAt: order.createdAt,
     paidAt: order.paidAt,
@@ -291,9 +295,44 @@ export function receiveLiveOrder(shopId: string, orderId: string) {
   return postLive({ action: 'receive_order', shopId, orderId }, { app: true });
 }
 
-export function rateLiveOrder(shopId: string, orderId: string) {
-  if (isFirebaseConfigured()) void cloudPatchOrder(shopId, orderId, { deliveryStatus: 'rated' });
-  return postLive({ action: 'rate_order', shopId, orderId }, { app: true });
+export function rateLiveOrder(
+  shopId: string,
+  orderId: string,
+  rating?: { rating: number; text?: string },
+) {
+  const tutorRating = rating
+    ? {
+        rating: Math.min(5, Math.max(1, Math.round(rating.rating))),
+        text: (rating.text ?? '').trim().slice(0, 400),
+        at: Date.now(),
+      }
+    : undefined;
+  const patch = {
+    deliveryStatus: 'rated' as const,
+    ...(tutorRating ? { tutorRating } : {}),
+  };
+  if (isFirebaseConfigured()) void cloudPatchOrder(shopId, orderId, patch);
+  return postLive(
+    { action: 'rate_order', shopId, orderId, rating: tutorRating?.rating, text: tutorRating?.text },
+    { app: true },
+  );
+}
+
+export function rateLiveBuyer(
+  shopId: string,
+  orderId: string,
+  rating: { rating: number; text?: string },
+) {
+  const buyerRating = {
+    rating: Math.min(5, Math.max(1, Math.round(rating.rating))),
+    text: (rating.text ?? '').trim().slice(0, 400),
+    at: Date.now(),
+  };
+  if (isFirebaseConfigured()) void cloudPatchOrder(shopId, orderId, { buyerRating });
+  return postLive(
+    { action: 'rate_buyer', shopId, orderId, rating: buyerRating.rating, text: buyerRating.text },
+    { owner: true },
+  );
 }
 
 export function cancelLiveOrder(shopId: string, orderId: string) {

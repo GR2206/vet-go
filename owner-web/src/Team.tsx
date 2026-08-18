@@ -7,12 +7,12 @@ export function Team() {
 
   return (
     <section>
-      <h1>Equipo de esta sucursal</h1>
+      <h1>👥 Equipo de esta sucursal</h1>
       <button type="button" className="primary" onClick={addProfessional}>
-        Sumar al equipo
+        ➕ Sumar al equipo
       </button>
       {team.length === 0 ? (
-        <p className="muted">Todavía no hay profesionales en este local.</p>
+        <p className="muted">🐾 Todavía no hay profesionales en este local.</p>
       ) : (
         <ul className="list">
           {team.map((pro) => (
@@ -22,8 +22,8 @@ export function Team() {
                 className="thumb-btn tall"
                 onClick={() => pickImage((uri) => updateProfessional(pro.id, { photo: uri }))}
               >
-                {pro.photo ? <CrispImg src={pro.photo} alt={pro.name} photo /> : <span className="ph">Foto</span>}
-                <span>Cambiar foto</span>
+                {pro.photo ? <CrispImg src={pro.photo} alt={pro.name} photo /> : <span className="ph">📷 Foto</span>}
+                <span>📷 Cambiar foto</span>
               </button>
               <div className="fields">
                 <label>
@@ -72,7 +72,7 @@ export function Team() {
                   className="danger span-2"
                   onClick={() => removeProfessional(pro.id)}
                 >
-                  Eliminar integrante
+                  🗑️ Eliminar integrante
                 </button>
               </div>
             </li>

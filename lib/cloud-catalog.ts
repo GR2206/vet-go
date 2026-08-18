@@ -161,6 +161,8 @@ export async function cloudPushOrder(order: LiveShopOrder) {
     confirmedAt: order.confirmedAt || 0,
     receivedAt: order.receivedAt || 0,
     ownerArchived: Boolean(order.ownerArchived),
+    tutorRating: order.tutorRating,
+    buyerRating: order.buyerRating,
     shipping: order.shipping ?? {},
     createdAt: Number(order.createdAt) || Date.now(),
     paidAt: Number(order.paidAt) || Date.now(),

@@ -21,11 +21,11 @@ export function Offers() {
 
   return (
     <section>
-      <h1>Ofertas del día</h1>
+      <h1>🏷️ Ofertas del día</h1>
 
       {preview.length ? (
         <div className="tutor-preview">
-          <p className="kicker">Así lo ve el tutor hoy</p>
+          <p className="kicker">👀 Así lo ve el tutor hoy</p>
           {preview.slice(0, 4).map((p) => (
             <article key={p.id} className="tutor-card">
               <CrispImg src={p.image || PRODUCT_PLACEHOLDER} alt="" photo />
@@ -40,7 +40,7 @@ export function Offers() {
           ))}
         </div>
       ) : (
-        <p className="muted">Todavía no hay ofertas vivas para hoy.</p>
+        <p className="muted">💤 Todavía no hay ofertas vivas para hoy.</p>
       )}
 
       {todayOffers.length ? (
@@ -56,7 +56,7 @@ export function Offers() {
                   </p>
                 </div>
                 <button type="button" className="ghost" onClick={() => unpublishOffer(o.id)}>
-                  Sacar
+                  ❌ Sacar
                 </button>
               </li>
             );
@@ -64,7 +64,7 @@ export function Offers() {
         </ul>
       ) : null}
 
-      <h2 className="subhead">Publicar</h2>
+      <h2 className="subhead">🚀 Publicar</h2>
       <input
         className="search"
         value={q}
@@ -100,7 +100,7 @@ export function Offers() {
                 publishOffer(p.id, n, label[p.id]);
               }}
             >
-              Publicar hoy
+              🚀 Publicar hoy
             </button>
           </li>
         ))}

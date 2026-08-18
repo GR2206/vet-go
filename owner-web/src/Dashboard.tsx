@@ -13,16 +13,16 @@ import { Support } from './Support';
 import { Team } from './Team';
 import { TurnosCal } from './TurnosCal';
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'resumen', label: 'Resumen' },
-  { id: 'ventas', label: 'Ventas' },
-  { id: 'catalogo', label: 'Catálogo' },
-  { id: 'ofertas', label: 'Ofertas' },
-  { id: 'turnos', label: 'Turnos' },
-  { id: 'equipo', label: 'Equipo' },
-  { id: 'chat', label: 'Chat' },
-  { id: 'local', label: 'Local' },
-  { id: 'soporte', label: 'Soporte' },
+const TABS: { id: Tab; emoji: string; label: string }[] = [
+  { id: 'resumen', emoji: '🏠', label: 'Resumen' },
+  { id: 'ventas', emoji: '🛒', label: 'Ventas' },
+  { id: 'catalogo', emoji: '📦', label: 'Catálogo' },
+  { id: 'ofertas', emoji: '🏷️', label: 'Ofertas' },
+  { id: 'turnos', emoji: '📅', label: 'Turnos' },
+  { id: 'equipo', emoji: '👥', label: 'Equipo' },
+  { id: 'chat', emoji: '💬', label: 'Chat' },
+  { id: 'local', emoji: '🏪', label: 'Local' },
+  { id: 'soporte', emoji: '🛟', label: 'Soporte' },
 ];
 
 export function Dashboard() {
@@ -35,7 +35,7 @@ export function Dashboard() {
         <div className="side-logo-wrap">
           <CrispImg src="/logo.png" alt="PETS&GO" logo decoding="sync" fetchPriority="high" />
         </div>
-        <p className="side-kicker">Dueños · Rosario</p>
+        <p className="side-kicker">🐾 Dueños · Rosario</p>
         <h2 className="side-shop">{shop.name}</h2>
         <p className="side-meta">
           {kindLabel(shop.kind)} · {shop.neighborhood}
@@ -48,7 +48,12 @@ export function Dashboard() {
               className={tab === item.id ? 'nav on' : 'nav'}
               onClick={() => setTab(item.id)}
             >
-              <span>{item.label}</span>
+              <span className="nav-label">
+                <span className="nav-emoji" aria-hidden="true">
+                  {item.emoji}
+                </span>
+                <span>{item.label}</span>
+              </span>
               {item.id === 'chat' && unreadChatCount > 0 ? (
                 <span className="nav-badge">{unreadChatCount > 9 ? '9+' : unreadChatCount}</span>
               ) : null}
@@ -59,7 +64,7 @@ export function Dashboard() {
           ))}
         </nav>
         <button type="button" className="ghost logout" onClick={logout}>
-          Salir
+          🚪 Salir
         </button>
       </aside>
       <main className="main">
@@ -149,7 +154,7 @@ function Resumen() {
 
   return (
     <section>
-      <h1>Hola, {shop.name}</h1>
+      <h1>👋 Hola, {shop.name}</h1>
       {stockAsks.length || out.length || critical.length || low.length ? (
         <div className="stock-alerts">
           {stockAsks.map((a) => (
@@ -162,7 +167,7 @@ function Resumen() {
                 setTab('catalogo');
               }}
             >
-              <p className="stock-alert-kicker">Sin stock</p>
+              <p className="stock-alert-kicker">⛔ Sin stock</p>
               <p>
                 {a.tutorName} pidió {a.productName} · sin stock
               </p>
@@ -170,19 +175,19 @@ function Resumen() {
           ))}
           {out.map((p) => (
             <button key={p.id} type="button" className="stock-alert red" onClick={() => setTab('catalogo')}>
-              <p className="stock-alert-kicker">Sin unidades</p>
+              <p className="stock-alert-kicker">⛔ Sin unidades</p>
               <p>Reponer {p.name}</p>
             </button>
           ))}
           {critical.map((p) => (
             <button key={p.id} type="button" className="stock-alert red" onClick={() => setTab('catalogo')}>
-              <p className="stock-alert-kicker">Pocas unidades</p>
+              <p className="stock-alert-kicker">🚨 Pocas unidades</p>
               <p>Menos de 5 · reponer {p.name}</p>
             </button>
           ))}
           {low.map((p) => (
             <button key={p.id} type="button" className="stock-alert orange" onClick={() => setTab('catalogo')}>
-              <p className="stock-alert-kicker">Stock bajo</p>
+              <p className="stock-alert-kicker">⚠️ Stock bajo</p>
               <p>
                 {p.stock} u. · reponer {p.name}
               </p>
@@ -196,17 +201,17 @@ function Resumen() {
           className={wait ? 'stat go alert-sale' : 'stat go'}
           onClick={() => setTab('ventas')}
         >
-          <p className="stat-label">Ventas</p>
+          <p className="stat-label">🛒 Ventas</p>
           <p className="stat-value">{wait}</p>
           <p className="stat-hint">{wait ? 'pedidos por confirmar' : 'sin pedidos nuevos'}</p>
         </button>
         <button type="button" className="stat go" onClick={() => setTab('catalogo')}>
-          <p className="stat-label">Catálogo</p>
+          <p className="stat-label">📦 Catálogo</p>
           <p className="stat-value">{catalog.length}</p>
           <p className="stat-hint">productos en Market</p>
         </button>
         <button type="button" className="stat go" onClick={() => setTab('ofertas')}>
-          <p className="stat-label">Ofertas hoy</p>
+          <p className="stat-label">🏷️ Ofertas hoy</p>
           <p className="stat-value">{todayOffers.length}</p>
           <p className="stat-hint">salen en Inicio del tutor</p>
         </button>
@@ -215,7 +220,7 @@ function Resumen() {
           className={unreadChatCount ? 'stat go alert-chat' : 'stat go'}
           onClick={() => setTab('chat')}
         >
-          <p className="stat-label">Chats</p>
+          <p className="stat-label">💬 Chats</p>
           <p className="stat-value">{unreadChatCount || inbox.length}</p>
           <p className="stat-hint">
             {unreadChatCount
@@ -228,7 +233,7 @@ function Resumen() {
           className={pendingTurnos ? 'stat go alert-turnos' : 'stat go'}
           onClick={() => setTab('turnos')}
         >
-          <p className="stat-label">Turnos</p>
+          <p className="stat-label">📅 Turnos</p>
           <p className="stat-value">{pendingTurnos}</p>
           <p className="stat-hint">{pendingTurnos ? 'por atender hoy' : 'nada pendiente hoy'}</p>
         </button>

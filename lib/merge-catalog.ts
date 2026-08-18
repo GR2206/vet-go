@@ -23,6 +23,8 @@ function mergeOrders(a: LiveShopOrder[] = [], b: LiveShopOrder[] = []) {
       merged.confirmedAt = prev.confirmedAt ?? o.confirmedAt;
       merged.receivedAt = prev.receivedAt ?? o.receivedAt;
     }
+    merged.tutorRating = prev.tutorRating || o.tutorRating;
+    merged.buyerRating = prev.buyerRating || o.buyerRating;
     if (prev.ownerArchived || o.ownerArchived) merged.ownerArchived = true;
     map.set(o.id, merged);
   }

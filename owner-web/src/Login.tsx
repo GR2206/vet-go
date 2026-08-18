@@ -9,11 +9,11 @@ export function Login({ unknown }: { unknown: boolean }) {
       <div className="login-panel">
         <div className="login-card">
           <CrispImg className="login-logo" src="/logo.png" alt="PETS&GO" logo decoding="sync" fetchPriority="high" />
-          <h1>Panel de dueños</h1>
+          <h1>🐾 Panel de dueños</h1>
           <p className="lead">
             El local carga precios, stock y ofertas. El tutor las ve el mismo día en la app.
           </p>
-          <label htmlFor="pin">PIN del local</label>
+          <label htmlFor="pin">🔑 PIN del local</label>
           <input
             id="pin"
             inputMode="numeric"

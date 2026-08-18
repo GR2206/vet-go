@@ -1,5 +1,8 @@
+import { useState } from 'react';
+
 import { startOfDay } from '@petsgo/lib/dates';
 import { checkoutPayDetail, formatARS } from '@petsgo/lib/format';
+import type { OrderRating } from '@petsgo/data/types';
 
 import { when } from './files';
 import { useOwner, type OwnerSale } from './store';
@@ -17,6 +20,71 @@ function tally(list: OwnerSale[]) {
       net: acc.net + s.net,
     }),
     { count: 0, gross: 0, fee: 0, net: 0 },
+  );
+}
+
+function starsLabel(n: number) {
+  return `${'★'.repeat(n)}${'☆'.repeat(Math.max(0, 5 - n))}`;
+}
+
+function RatingBlock({ title, rating }: { title: string; rating: OrderRating }) {
+  return (
+    <div className="sale-rate">
+      <p className="sale-rate-title">
+        {title} · <span className="sale-stars">{starsLabel(rating.rating)}</span>
+      </p>
+      {rating.text ? <p className="sale-rate-text">“{rating.text}”</p> : <p className="muted">Sin comentario</p>}
+      {rating.at ? <p className="muted">{when(rating.at)}</p> : null}
+    </div>
+  );
+}
+
+function BuyerRateForm({ orderId }: { orderId: string }) {
+  const { rateBuyer } = useOwner();
+  const [open, setOpen] = useState(false);
+  const [stars, setStars] = useState(5);
+  const [text, setText] = useState('');
+
+  if (!open) {
+    return (
+      <button type="button" className="ghost" onClick={() => setOpen(true)}>
+        Calificar comprador ⭐
+      </button>
+    );
+  }
+
+  return (
+    <div className="sale-rate-form">
+      <p className="sale-rate-title">⭐ Calificar al comprador</p>
+      <div className="sale-star-pick">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} type="button" className="sale-star-hit" onClick={() => setStars(n)}>
+            {n <= stars ? '★' : '☆'}
+          </button>
+        ))}
+      </div>
+      <textarea
+        rows={2}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Comentario (opcional)"
+      />
+      <div className="sale-rate-actions">
+        <button
+          type="button"
+          className="primary"
+          onClick={() => {
+            rateBuyer(orderId, { rating: stars, text: text.trim() });
+            setOpen(false);
+          }}
+        >
+          Enviar 📬
+        </button>
+        <button type="button" className="ghost" onClick={() => setOpen(false)}>
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -54,23 +122,34 @@ export function SaleCard({ order, variant }: { order: OwnerSale; variant: 'live'
         {order.shipping.floor ? ` ${order.shipping.floor}` : ''} · {order.shipping.neighborhood} ·{' '}
         {order.shipping.phone}
       </p>
-      {confirmed ? <p className="ok">Pedido confirmado correctamente.</p> : null}
+      {confirmed ? <p className="ok">✅ Pedido confirmado correctamente.</p> : null}
+      {order.deliveryStatus === 'received' || order.receivedAt ? (
+        <p className="ok">📦 El tutor confirmó que el producto llegó bien.</p>
+      ) : null}
+      {order.tutorRating ? (
+        <RatingBlock title="⭐ Calificación del tutor" rating={order.tutorRating} />
+      ) : null}
+      {order.buyerRating ? (
+        <RatingBlock title="🧡 Tu calificación al comprador" rating={order.buyerRating} />
+      ) : confirmed && variant === 'live' && !order.archived ? (
+        <BuyerRateForm orderId={order.id} />
+      ) : null}
       <div className="sale-actions">
         {variant === 'live' && order.status === 'awaiting_confirm' ? (
           <button type="button" className="primary" onClick={() => confirmOrder(order.id)}>
-            Confirmar pedido
+            ✅ Confirmar pedido
           </button>
         ) : null}
         {variant === 'live' ? (
           <button type="button" className="danger" onClick={() => deleteSale(order.id)}>
-            Eliminar
+            🗑️ Eliminar
           </button>
         ) : order.archived ? (
           <button type="button" className="primary" onClick={() => restoreSale(order.id)}>
-            Restaurar
+            ♻️ Restaurar
           </button>
         ) : (
-          <span className="muted">En Ventas</span>
+          <span className="muted">📌 En Ventas</span>
         )}
       </div>
     </li>
@@ -91,7 +170,7 @@ export function Sales() {
     <section>
       <div className="chat-head">
         <div>
-          <h1>Ventas Market</h1>
+          <h1>🛒 Ventas Market</h1>
         </div>
         <div className="chat-tools">
           <button
@@ -99,7 +178,7 @@ export function Sales() {
             className={salesAutoExpire ? 'ghost' : 'primary'}
             onClick={() => setSalesAutoExpire(!salesAutoExpire)}
           >
-            {salesAutoExpire ? 'Caducidad 30 días: on' : 'Caducidad anulada'}
+            {salesAutoExpire ? '⏳ Caducidad 30 días: on' : '♾️ Caducidad anulada'}
           </button>
           <button
             type="button"
@@ -108,7 +187,7 @@ export function Sales() {
               window.open(`${window.location.pathname}#/historial-ventas`, '_blank', 'noopener')
             }
           >
-            Historial 30 días
+            📜 Historial 30 días
           </button>
         </div>
       </div>
@@ -118,7 +197,7 @@ export function Sales() {
           : 'La caducidad está anulada: el historial de compras no se borra solo.'}
       </p>
       {liveSales.length === 0 ? (
-        <p className="muted">No hay pedidos activos. Los eliminados están en el historial.</p>
+        <p className="muted">💤 No hay pedidos activos. Los eliminados están en el historial.</p>
       ) : (
         <ul className="list sales-grid">
           {liveSales.map((order) => (
@@ -128,14 +207,14 @@ export function Sales() {
       )}
       <div className="sale-balances">
         <article className="card sale-balance">
-          <p className="stat-label">Hoy</p>
+          <p className="stat-label">☀️ Hoy</p>
           <p className="stat-value">{money(day.net)}</p>
           <p className="stat-hint">
             {day.count} · {money(day.gross)} bruto
           </p>
         </article>
         <article className="card sale-balance">
-          <p className="stat-label">Mes</p>
+          <p className="stat-label">📆 Mes</p>
           <p className="stat-value">{money(month.net)}</p>
           <p className="stat-hint">
             {month.count} · {money(month.gross)} bruto

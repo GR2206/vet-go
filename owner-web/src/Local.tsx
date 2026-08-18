@@ -17,10 +17,10 @@ export function Local() {
 
   return (
     <section>
-      <h1>Ficha del local</h1>
+      <h1>🏪 Ficha del local</h1>
       <button type="button" className="cover-btn" onClick={() => pickImage(setCover)}>
         <CrispImg src={coverUri} alt="" photo />
-        <span>Cambiar portada</span>
+        <span>📷 Cambiar portada</span>
       </button>
       <div className="avatar-row">
         <button type="button" className="avatar-btn" onClick={() => pickImage(setAvatar)}>
@@ -29,7 +29,7 @@ export function Local() {
         <div>
           <p className="card-title">{shop.name}</p>
           <button type="button" className="link" onClick={() => pickImage(setAvatar)}>
-            Cambiar foto de perfil
+            Cambiar foto de perfil 📷
           </button>
         </div>
       </div>
@@ -110,7 +110,7 @@ export function Local() {
           </select>
         </label>
         <div className="span-2">
-          <p className="field-label">Formas de pago activas</p>
+          <p className="field-label">💳 Formas de pago activas</p>
           <div className="chips">
             {shop.paymentMethods.map((m) => (
               <button
