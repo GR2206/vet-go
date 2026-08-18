@@ -6,13 +6,13 @@ function readEnv(key: string) {
   return '';
 }
 
-/** Base del panel owner-web (sin /api/...). Seguro para navegador y Vite. */
+/** Base del panel owner-web (sin /api/...). En hosting usa el mismo origin; el API local es opcional. */
 export function resolveLiveApiBase(): string {
   const custom = readEnv('LIVE_API_URL') || readEnv('EXPO_PUBLIC_LIVE_API_URL');
   if (custom) return custom.replace(/\/$/, '');
 
   try {
-    if (typeof window !== 'undefined' && /:\d+\b/.test(window.location.origin)) {
+    if (typeof window !== 'undefined' && window.location?.origin) {
       return window.location.origin;
     }
   } catch {

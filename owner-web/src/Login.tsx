@@ -26,7 +26,7 @@ export function Login({ unknown }: { unknown: boolean }) {
           {unknown ? <p className="err">Ese PIN no está asociado a un local.</p> : null}
           {import.meta.env.DEV ? (
             <p className="hint">
-              Demo dev: Pichichos <b>4411</b> · San Martín <b>2580</b> · Luna <b>1919</b>
+              Demo local: Pichichos <b>4411</b> · San Martín <b>2580</b> · Luna <b>1919</b>
             </p>
           ) : (
             <p className="hint">Si no tenés PIN, pedilo a PETS&GO / GR admin.</p>

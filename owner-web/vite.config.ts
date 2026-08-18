@@ -73,6 +73,15 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       include: ['firebase/app', 'firebase/firestore'],
     },
+    build: {
+      outDir: fileURLToPath(new URL('./dist', import.meta.url)),
+      emptyOutDir: true,
+      sourcemap: false,
+    },
+    preview: {
+      port: 4173,
+      host: true,
+    },
     server: {
       port: 5173,
       open: true,

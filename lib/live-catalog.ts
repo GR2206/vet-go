@@ -3,6 +3,7 @@ import { liveCatalogUrl } from './live-api-url';
 import {
   cloudAskStock,
   cloudDeductStock,
+  cloudDismissAsk,
   cloudFetchCatalog,
   cloudPatchOrder,
   cloudPatchThreadPet,
@@ -13,6 +14,8 @@ import {
 } from './cloud-catalog';
 import { mergeLiveCatalogFiles } from './merge-catalog';
 import { isAppAction, isOwnerAction, liveAppWriteKeyFromEnv } from './live-catalog-security';
+import { shopIdForPin, shopName } from './owner-pins';
+import { isSeedProductId } from './seed-live';
 
 export { liveCatalogUrl, resolveLiveApiBase } from './live-api-url';
 export { isFirebaseConfigured, getFirestoreDb } from './firebase';
@@ -88,10 +91,9 @@ export function overlayCatalog(base: Product[], file?: LiveCatalogFile | null): 
     byShop.set(p.shopId, list);
   }
   for (const [shopId, live] of Object.entries(file.shops)) {
-    byShop.set(
-      shopId,
-      live.products.filter((p) => !live.paused?.[p.id]),
-    );
+    const liveProducts = (live.products ?? []).filter((p) => !live.paused?.[p.id] && !isSeedProductId(p.id));
+    if (!liveProducts.length) continue;
+    byShop.set(shopId, liveProducts);
   }
   return [...byShop.values()].flat();
 }
@@ -137,7 +139,9 @@ async function fetchLocalLiveCatalog(): Promise<LiveCatalogFile | null> {
   try {
     const res = await fetch(liveCatalogUrl());
     if (!res.ok) return null;
-    return res.json();
+    const data = (await res.json()) as LiveCatalogFile;
+    if (!data?.shops || typeof data.shops !== 'object') return null;
+    return data;
   } catch {
     return null;
   }
@@ -237,6 +241,7 @@ export function askShopStock(input: Omit<StockAsk, 'id' | 'at'> & { id?: string;
 }
 
 export function dismissShopAsk(shopId: string, id: string) {
+  if (isFirebaseConfigured()) void cloudDismissAsk(shopId, id);
   return postLive({ action: 'dismiss', shopId, id }, { owner: true });
 }
 
@@ -362,6 +367,17 @@ export function replyLiveChat(shopId: string, threadId: string, message: ShopMes
 
 export type OwnerSession = { ok: true; shopId: string; shopName: string } | { ok: false };
 
+function pinSession(pin: string): OwnerSession & { error?: string } {
+  const shopId = shopIdForPin(pin);
+  if (!shopId) return { ok: false, error: 'Ese PIN no está asociado a un local.' };
+  return { ok: true, shopId, shopName: shopName(shopId) };
+}
+
+async function readJson(res: Response) {
+  const data = await res.json();
+  return data && typeof data === 'object' ? data : null;
+}
+
 export async function ownerLogin(pin: string): Promise<OwnerSession & { error?: string }> {
   try {
     const res = await fetch('/api/owner/login', {
@@ -370,10 +386,12 @@ export async function ownerLogin(pin: string): Promise<OwnerSession & { error?: 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin }),
     });
-    return res.json();
+    const data = (await readJson(res)) as (OwnerSession & { error?: string }) | null;
+    if (data?.ok) return data;
   } catch {
-    return { ok: false, error: 'No pudimos validar el PIN.' };
+    /* hosting sin API local */
   }
+  return pinSession(pin);
 }
 
 export async function ownerLogout() {
@@ -387,8 +405,10 @@ export async function ownerLogout() {
 export async function ownerSession(): Promise<OwnerSession> {
   try {
     const res = await fetch('/api/owner/session', { credentials: 'include' });
-    return res.json();
+    const data = (await readJson(res)) as OwnerSession | null;
+    if (data?.ok) return data;
   } catch {
-    return { ok: false };
+    /* hosting sin API local */
   }
+  return { ok: false };
 }

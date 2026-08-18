@@ -7,13 +7,14 @@ import { BackLink } from '@/components/ui/BackLink';
 import { Button } from '@/components/ui/Button';
 import { ContactButton } from '@/components/ui/ContactButton';
 import { zones } from '@/data/mock';
+import { ownerPanelUrl } from '@/lib/owner-panel-url';
 import { useApp } from '@/store/app-store';
 import { colors, fonts, radius, surface } from '@/theme/tokens';
 
 function ownerPanelHelp() {
   Alert.alert(
     'Panel para comercios',
-    'Los dueños de local no entran por la app del tutor. Abrí el panel web en el navegador:\n\n· Desarrollo: http://localhost:5173\n· PIN demo Pichichos: 4411 · San Martín: 2580 · Luna: 1919',
+    `Los dueños de local no entran por la app del tutor. Abrí el panel en el navegador:\n\n${ownerPanelUrl()}\n\nSi no tenés PIN, pedilo a PETS&GO / GR admin.`,
   );
 }
 

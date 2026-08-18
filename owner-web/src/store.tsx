@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-import { defaultShopChats, places, products, professionals, services } from '@petsgo/data/mock';
+import { places, services } from '@petsgo/data/mock';
 import type {
   OrderDeliveryStatus,
   OrderRating,
@@ -19,13 +19,13 @@ import { DAY_MS, endOfDay } from '@petsgo/lib/dates';
 import { liveOffers } from '@petsgo/lib/offers';
 import { publishShopCatalog, fetchLiveCatalog, dismissShopAsk, ownerLogin, ownerLogout, ownerSession, confirmLiveOrder, archiveLiveOrder, replyLiveChat, rateLiveBuyer, type LiveShopOrder, type LiveShopThread, type StockAsk } from '@petsgo/lib/live-catalog';
 import { formatARS } from '@petsgo/lib/format';
-import { splitSale } from '@petsgo/lib/payout';
+import { isDemoLiveOrderId, isDemoThreadId, isSeedProductId } from '@petsgo/lib/seed-live';
 import { mergeSheetProducts, type SheetProductRow } from '@petsgo/lib/sheet-catalog';
 
 import { PRODUCT_PLACEHOLDER, validateProductForPublish } from './files';
 
 const PIN_KEY = 'petsgo.owner.pin';
-const SAVE_KEY = (shopId: string) => `petsgo.owner.v1.${shopId}`;
+const SAVE_KEY = (shopId: string) => `petsgo.owner.v3.${shopId}`;
 const CHAT_KEEP_MS = 30 * DAY_MS;
 
 export type Tab = 'resumen' | 'ventas' | 'catalogo' | 'ofertas' | 'turnos' | 'equipo' | 'chat' | 'local' | 'soporte';
@@ -106,264 +106,6 @@ type SavedShop = {
   salesSeenAt?: number;
 };
 
-function ship(
-  fullName: string,
-  extra: Partial<ShippingAddress> & Pick<ShippingAddress, 'street' | 'number' | 'neighborhood' | 'phone'>,
-): ShippingAddress {
-  const [firstName, ...rest] = fullName.split(' ');
-  return {
-    firstName: firstName || fullName,
-    lastName: rest.join(' ') || '',
-    fullName,
-    dni: extra.dni ?? '35111222',
-    phone: extra.phone,
-    email: extra.email ?? `${firstName?.toLowerCase() ?? 'tutor'}@mail.com`,
-    street: extra.street,
-    number: extra.number,
-    floor: extra.floor ?? '',
-    neighborhood: extra.neighborhood,
-    city: extra.city ?? 'Rosario',
-    postalCode: extra.postalCode ?? '2000',
-    notes: extra.notes ?? '',
-  };
-}
-
-function demoSales(shopId: string): OwnerSale[] {
-  if (shopId !== 'pichichos') return [];
-  const a = splitSale(48900);
-  const b = splitSale(17800);
-  const c = splitSale(12400);
-  const d = splitSale(9600);
-  const e = splitSale(22100);
-  return [
-    {
-      id: 'ow-new',
-      shopId,
-      buyer: 'Julián R.',
-      items: [{ name: 'Correa antideslizante 1,20 m', qty: 1, unitPrice: 12400 }],
-      ...c,
-      method: 'mercadopago',
-      createdAt: Date.now() - 36e5 * 2,
-      paidAt: Date.now() - 36e5 * 2,
-      status: 'awaiting_confirm',
-      shipping: ship('Julián R.', {
-        street: 'Italia',
-        number: '890',
-        floor: '1 A',
-        neighborhood: 'Pichincha',
-        phone: '3415554411',
-        email: 'julian@mail.com',
-        notes: 'Timbre Rivas. Perro en el patio.',
-      }),
-    },
-    {
-      id: 'ow-1',
-      shopId,
-      buyer: 'Gino Rossi',
-      items: [{ name: 'Royal Canin Maxi Adult 15 kg', qty: 1, unitPrice: 48900 }],
-      ...a,
-      method: 'mercadopago',
-      createdAt: Date.now() - 36e5 * 5,
-      paidAt: Date.now() - 36e5 * 5,
-      status: 'confirmed',
-      confirmedAt: Date.now() - 36e5 * 4,
-      shipping: ship('Gino Rossi', {
-        street: 'San Lorenzo',
-        number: '1240',
-        floor: '3 B',
-        neighborhood: 'Centro',
-        phone: '3415550000',
-        dni: '35111222',
-        notes: 'Portería, dejar con el encargado.',
-      }),
-    },
-    {
-      id: 'ow-2',
-      shopId,
-      buyer: 'Carla M.',
-      items: [{ name: 'Pipeta antipulgas M 10-20 kg', qty: 2, unitPrice: 8900 }],
-      ...b,
-      method: 'transfer',
-      createdAt: Date.now() - DAY_MS * 2,
-      paidAt: Date.now() - DAY_MS * 2,
-      status: 'paid_out',
-      confirmedAt: Date.now() - DAY_MS * 2 + 36e5,
-      shipping: ship('Carla M.', {
-        street: 'Córdoba',
-        number: '2100',
-        neighborhood: 'Echesortu',
-        phone: '3415557788',
-        notes: 'Retira en el local.',
-      }),
-    },
-    {
-      id: 'ow-3',
-      shopId,
-      buyer: 'Ana P.',
-      items: [{ name: 'Snacks dentales x30', qty: 1, unitPrice: 9600 }],
-      ...d,
-      method: 'mercadopago',
-      createdAt: Date.now() - DAY_MS * 9,
-      paidAt: Date.now() - DAY_MS * 9,
-      status: 'confirmed',
-      confirmedAt: Date.now() - DAY_MS * 9 + 36e5,
-      shipping: ship('Ana P.', {
-        street: 'Mendoza',
-        number: '1540',
-        neighborhood: 'Centro',
-        phone: '3415554411',
-      }),
-    },
-    {
-      id: 'ow-4',
-      shopId,
-      buyer: 'Lucía S.',
-      items: [{ name: 'Cama ortopédica M', qty: 1, unitPrice: 22100 }],
-      ...e,
-      method: 'transfer',
-      createdAt: Date.now() - DAY_MS * 4,
-      paidAt: Date.now() - DAY_MS * 4,
-      status: 'confirmed',
-      confirmedAt: Date.now() - DAY_MS * 4 + 36e5,
-      archived: true,
-      shipping: ship('Lucía S.', {
-        street: 'Ovidio Lagos',
-        number: '732',
-        neighborhood: 'Pichincha',
-        phone: '3415553300',
-      }),
-    },
-  ];
-}
-
-function demoThreads(shopId: string): ShopThread[] {
-  const seeded = defaultShopChats[shopId] ?? [];
-  const fromFlat = seeded.length
-    ? [
-        {
-          id: `th-${shopId}-gino`,
-          shopId,
-          userName: 'Gino',
-          petName: 'Max',
-          petSpecies: 'dog' as const,
-          messages: [
-            ...seeded,
-            {
-              id: `sc-${shopId}-new`,
-              shopId,
-              from: 'user' as const,
-              author: 'Gino',
-              text: 'Dale, confirmo retiro a las 17.',
-              at: Date.now() - 1000 * 60 * 18,
-            },
-          ],
-          updatedAt: Date.now() - 1000 * 60 * 18,
-          archived: false,
-        },
-      ]
-    : [];
-  if (shopId === 'pichichos') {
-    return [
-      ...fromFlat,
-      {
-        id: 'th-carla',
-        shopId,
-        userName: 'Carla M.',
-        petName: 'Mora',
-        petSpecies: 'cat' as const,
-        messages: [
-          {
-            id: 'sc-c1',
-            shopId,
-            from: 'user',
-            author: 'Carla M.',
-            text: '¿La pipeta de 10-20 kg es para pelo largo también?',
-            at: Date.now() - 1000 * 60 * 40,
-          },
-        ],
-        updatedAt: Date.now() - 1000 * 60 * 40,
-        archived: false,
-      },
-      {
-        id: 'th-julian',
-        shopId,
-        userName: 'Julián R.',
-        petName: 'Lola',
-        petSpecies: 'cat' as const,
-        messages: [
-          {
-            id: 'sc-j1',
-            shopId,
-            from: 'user',
-            author: 'Julián R.',
-            text: 'Pedí la correa. ¿Me confirman el envío a Pichincha?',
-            at: Date.now() - 36e5 * 12,
-          },
-          {
-            id: 'sc-j2',
-            shopId,
-            from: 'shop',
-            author: 'Pichichos',
-            text: 'Sí, sale hoy por cadete. Te aviso cuando esté en camino.',
-            at: Date.now() - 36e5 * 11,
-          },
-        ],
-        updatedAt: Date.now() - 36e5 * 11,
-        archived: true,
-      },
-      {
-        id: 'th-ana',
-        shopId,
-        userName: 'Ana P.',
-        petName: 'Coco',
-        petSpecies: 'dog' as const,
-        messages: [
-          {
-            id: 'sc-a1',
-            shopId,
-            from: 'user',
-            author: 'Ana P.',
-            text: 'Quedó anotado el Royal Canin de la semana pasada. ¿Tienen más stock?',
-            at: Date.now() - DAY_MS * 22,
-          },
-        ],
-        updatedAt: Date.now() - DAY_MS * 22,
-        archived: true,
-      },
-    ];
-  }
-  if (fromFlat.length) return fromFlat;
-  return [
-    {
-      id: `th-${shopId}-demo`,
-      shopId,
-      userName: 'Tutor demo',
-      petName: 'Max',
-      petSpecies: 'dog' as const,
-      messages: [
-        {
-          id: `sc-${shopId}-1`,
-          shopId,
-          from: 'user',
-          author: 'Tutor demo',
-          text: 'Hola, quería consultar un turno para esta semana.',
-          at: Date.now() - 1000 * 60 * 90,
-        },
-      ],
-      updatedAt: Date.now() - 1000 * 60 * 90,
-      archived: false,
-    },
-  ];
-}
-
-function cloneCatalog(shopId: string): Product[] {
-  return products.filter((p) => p.shopId === shopId).map((p) => ({ ...p }));
-}
-
-function cloneTeam(shopId: string): Professional[] {
-  return professionals.filter((p) => p.placeId === shopId).map((p) => ({ ...p }));
-}
-
 function loadShop(shopId: string): SavedShop | null {
   try {
     const raw = localStorage.getItem(SAVE_KEY(shopId));
@@ -407,61 +149,6 @@ function coerceAppointment(raw: OwnerAppointment): OwnerAppointment {
     kind: grooming ? 'grooming' : 'clinic',
     serviceName: raw.serviceName || SERVICE_NAME[serviceKind],
   };
-}
-
-function demoAppointments(shopId: string): OwnerAppointment[] {
-  const tutors: { pet: string; species: 'dog' | 'cat'; tutor: string; phone: string; email: string }[] = [
-    { pet: 'Max', species: 'dog', tutor: 'Gino Rossi', phone: '3415550000', email: 'gino@mail.com' },
-    { pet: 'Mora', species: 'cat', tutor: 'Carla M.', phone: '3415557788', email: 'carla@mail.com' },
-    { pet: 'Coco', species: 'dog', tutor: 'Ana P.', phone: '3415554411', email: 'ana@mail.com' },
-    { pet: 'Lola', species: 'cat', tutor: 'Julián R.', phone: '3415551200', email: 'julian@mail.com' },
-    { pet: 'Toby', species: 'dog', tutor: 'Lucía S.', phone: '3415553300', email: 'lucia@mail.com' },
-  ];
-  const services: AppointmentService[] = ['vet', 'vaccine', 'bath', 'cut'];
-  const times = ['09:00', '10:30', '12:00', '14:30', '16:00', '17:30'];
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const today = now.getDate();
-  const last = new Date(y, m + 1, 0).getDate();
-  const days = [2, 5, 8, 10, 12, 15, today, today, today + 1, today + 3, 22, 25, 28].filter(
-    (d) => d >= 1 && d <= last,
-  );
-  return days.map((day, i) => {
-    const who = tutors[i % tutors.length];
-    const time = times[i % times.length];
-    const [hh, mm] = time.split(':').map(Number);
-    const serviceKind = services[i % services.length];
-    const grooming = serviceKind === 'bath' || serviceKind === 'cut';
-    return {
-      id: `ap-${shopId}-${i}`,
-      shopId,
-      at: new Date(y, m, day, hh, mm).getTime(),
-      time,
-      petName: who.pet,
-      species: who.species,
-      kind: grooming ? 'grooming' : 'clinic',
-      serviceKind,
-      serviceName: SERVICE_NAME[serviceKind],
-      tutorName: who.tutor,
-      tutorPhone: who.phone,
-      tutorEmail: who.email,
-      taken: i === 1,
-    };
-  });
-}
-
-function demoSupport(shopId: string, shopName: string): ShopMessage[] {
-  return [
-    {
-      id: 'sup-1',
-      shopId,
-      from: 'shop',
-      author: 'GR Producciones',
-      text: `Hola ${shopName}, somos el admin de PETS&GO (GR Producciones). Escribí acá y te respondemos.`,
-      at: Date.now() - 1000 * 60 * 5,
-    },
-  ];
 }
 
 function lastUserMessageAt(thread: ShopThread) {
@@ -788,9 +475,9 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     const saved = loadShop(base.id);
     const auto = saved?.chatAutoExpire ?? true;
     const salesAuto = saved?.salesAutoExpire ?? true;
-    setCatalog(saved?.catalog ?? cloneCatalog(base.id));
+    setCatalog((saved?.catalog ?? []).filter((p) => !isSeedProductId(p.id)));
     setDrafts(saved?.drafts ?? []);
-    setTeam(saved?.team ?? cloneTeam(base.id));
+    setTeam(saved?.team ?? []);
     setOffers(saved?.offers ?? []);
     setPaused(saved?.paused ?? {});
     setPrices(saved?.prices ?? {});
@@ -799,15 +486,15 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
     setShopPatch(saved?.shopPatch ?? {});
     setChatAutoExpireState(auto);
     setSalesAutoExpireState(salesAuto);
-    setThreads(pruneThreads(saved?.threads ?? demoThreads(base.id), auto));
-    setSales(pruneSales((saved?.sales ?? demoSales(base.id)).map(coerceSale), salesAuto));
+    setThreads(pruneThreads((saved?.threads ?? []).filter((t) => !isDemoThreadId(t.id)), auto));
+    setSales(pruneSales((saved?.sales ?? []).filter((s) => !isDemoLiveOrderId(s.id)).map(coerceSale), salesAuto));
     setSeenAt(saved?.seenAt ?? {});
-    setSupportChat(saved?.supportChat ?? demoSupport(base.id, base.name));
+    setSupportChat(saved?.supportChat ?? []);
     const booked = saved?.appointments;
     setAppointments(
       booked?.length && booked.every((a) => a.serviceKind && a.species)
         ? booked.map(coerceAppointment)
-        : demoAppointments(base.id),
+        : [],
     );
     setStockAsks(saved?.stockAsks ?? []);
     setSalesSeenAt(saved?.salesSeenAt ?? 0);
@@ -851,6 +538,7 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!base || !ready || hydrated.current !== base.id) return;
+    if (!catalog.length || catalog.every((p) => isSeedProductId(p.id))) return;
     if (publishTimer.current) clearTimeout(publishTimer.current);
     publishTimer.current = setTimeout(() => {
       publishShopCatalog(base.id, catalog, paused);
@@ -870,16 +558,18 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         if (!live || !on) return;
         setStockAsks(live.asks ?? []);
         setCatalog((prev) => {
+          const liveProducts = (live.products ?? []).filter((p) => !isSeedProductId(p.id));
+          if (!prev.length && liveProducts.length) return liveProducts;
           let changed = false;
           const next = prev.map((p) => {
-            const hit = live.products.find((x) => x.id === p.id);
+            const hit = liveProducts.find((x) => x.id === p.id);
             if (!hit || hit.stock === p.stock) return p;
             changed = true;
             return { ...p, stock: hit.stock };
           });
           return changed ? next : prev;
         });
-        const incoming = (live.orders ?? []).filter(usableLiveOrder);
+        const incoming = (live.orders ?? []).filter(usableLiveOrder).filter((o) => !isDemoLiveOrderId(o.id));
         const known = new Set(salesRef.current.map((s) => s.id));
         const fresh = incoming.filter((o) => !known.has(o.id));
         if (fresh.length) {
@@ -967,7 +657,9 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
           const changed = next.some((s, i) => s !== prev[i]);
           return changed ? next : prev;
         });
-        const liveThreads = (live.threads ?? []).filter((t) => t.shopId === base.id);
+        const liveThreads = (live.threads ?? []).filter(
+          (t) => t.shopId === base.id && !isDemoThreadId(t.id),
+        );
         if (liveThreads.length) {
           setThreads((prev) => {
             const known = new Set(prev.map((t) => t.id));

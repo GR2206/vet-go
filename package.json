@@ -9,6 +9,8 @@
     "eas:prod:android": "npx eas-cli@latest build --platform android --profile production",
     "eas:prod:ios": "npx eas-cli@latest build --platform ios --profile production",
     "owner-web": "node ./owner-web/node_modules/vite/bin/vite.js --config ./owner-web/vite.config.ts",
+    "owner-web:build": "node ./owner-web/node_modules/vite/bin/vite.js build --config ./owner-web/vite.config.ts",
+    "owner-web:deploy": "npm run owner-web:build && node ./node_modules/firebase-tools/lib/bin/firebase.js deploy --only hosting",
     "gen:live-keys": "node ./scripts/gen-live-keys.mjs",
     "firebase:rules": "node ./node_modules/firebase-tools/lib/bin/firebase.js deploy --only firestore:rules",
     "dev:both": "start-both.cmd",
